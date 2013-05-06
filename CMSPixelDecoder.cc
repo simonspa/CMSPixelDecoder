@@ -34,8 +34,8 @@ void CMSPixelStatistics::update(CMSPixelStatistics stats) {
   pixels_invalid += stats.pixels_invalid;
 };
 void CMSPixelStatistics::print() {
-  LOG(logSUMMARY) << "TB Trigger Marker: " << std::setw(8) <<  head_data;
-  LOG(logSUMMARY) << "TB Data Marker:    " << std::setw(8) <<  head_trigger;
+  LOG(logSUMMARY) << "TB Trigger Marker: " << std::setw(8) <<  head_trigger;
+  LOG(logSUMMARY) << "TB Data Marker:    " << std::setw(8) <<  head_data;
   LOG(logSUMMARY) << "  Events empty:    " << std::setw(8) <<  evt_empty;
   LOG(logSUMMARY) << "  Events valid:    " << std::setw(8) <<  evt_valid;
   LOG(logSUMMARY) << "    Pixels valid:  " << std::setw(8) <<  pixels_valid;
@@ -112,6 +112,9 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< int16_t > * rawdata) {
 
 CMSPixelFileDecoder::CMSPixelFileDecoder(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile)
 {
+  // Make the roc type available:
+  theROC = ROCTYPE;
+  
   // Prepare a new even decoder instance:
   if(ROCTYPE & ROC_PSI46V2 || ROCTYPE & ROC_PSI46XDB) {
     if(!read_address_levels(addressFile,rocs,addressLevels))
@@ -373,7 +376,7 @@ int CMSPixelEventDecoder::get_event(std::vector< int16_t > data, std::vector<eve
   unsigned int roc = 0;
   event tmp;
     
-  LOG(logDEBUG3) << "Looping over event data with granularity " << L_GRANULARITY << "," << L_GRANULARITY*data.size() << " iterations.";
+  LOG(logDEBUG3) << "Looping over event data with granularity " << L_GRANULARITY << ", " << L_GRANULARITY*data.size() << " iterations.";
         
   while(pos < L_GRANULARITY*data.size()) {
     // Try to find a new ROC header:
@@ -472,7 +475,6 @@ int CMSPixelEventDecoder::pre_check_sanity(std::vector< int16_t > * data, unsign
   
   LOG(logDEBUG2) << "Pre-decoding event sane.";
   LOG(logDEBUG) << "GET_EVENT::STATUS event: " << length << " data words.";
-  statistics.evt_valid++;
   return 0;
 }
   
@@ -488,6 +490,12 @@ int CMSPixelEventDecoder::post_check_sanity(std::vector< event > * evt, unsigned
     return DEC_ERROR_NO_OF_ROCS;
   }
   else LOG(logDEBUG) << "GET_EVENT::STATUS correctly detected " << rocs+1 << " ROC(s).";
+
+  if(evt->size() == 0) {
+    LOG(logINFO) << "GET_EVENT: event is empty, no hits decoded.";
+    statistics.evt_empty++;
+    return DEC_ERROR_EMPTY_EVENT;
+  }
 
   LOG(logDEBUG2) << "Post-decoding event sane.";
   statistics.evt_valid++;

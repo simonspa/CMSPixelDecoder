@@ -73,6 +73,7 @@ namespace CMSPixel {
 
   class CMSPixelStatistics {
   public:
+    CMSPixelStatistics() { init(); };
     void init();
     void update(CMSPixelStatistics stats);
     void print();
@@ -84,7 +85,7 @@ namespace CMSPixel {
     uint32_t evt_valid;
     // Number of empty events (fine, but contained no pixel)
     uint32_t evt_empty;
-    // Number of invalif events (something is fishy with this)
+    // Number of invalid events (something is fishy with this)
     //  * No ROC headers / wrong number of ROC headers
     //  * Missing TBM Header or Trailer
     //  * (currently not) Pixel decoding failed
