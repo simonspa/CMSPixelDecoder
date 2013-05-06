@@ -366,7 +366,7 @@ int CMSPixelEventDecoder::get_event(std::vector< int16_t > data, std::vector<eve
   if(!preprocessing(&data)) return DEC_ERROR_INVALID_DATA;
 
   // Check sanity
-  int status = check_event_sanity(&data,&pos);
+  int status = pre_check_sanity(&data,&pos);
   if(status != 0) return status;
 
   // Init ROC id:
@@ -382,14 +382,18 @@ int CMSPixelEventDecoder::get_event(std::vector< int16_t > data, std::vector<eve
       evt->push_back(tmp);
   }
 
+  // Check sanity of output
+  status = post_check_sanity(evt,roc);
+  if(status != 0) return status;
+
   LOG(logDEBUG) << "GET_EVENT::STATUS end of event processing.";
   return 0;
 }
 
 
-int CMSPixelEventDecoder::check_event_sanity(std::vector< int16_t > * data, unsigned int * pos) {
+int CMSPixelEventDecoder::pre_check_sanity(std::vector< int16_t > * data, unsigned int * pos) {
 
-  LOG(logDEBUG2) << "Checking event sanity...";
+  LOG(logDEBUG2) << "Checking pre decoding event sanity...";
   unsigned int length = L_GRANULARITY*data->size();
     
   // Check presence of TBM tokens if necessary:
@@ -448,33 +452,44 @@ int CMSPixelEventDecoder::check_event_sanity(std::vector< int16_t > * data, unsi
   }
   // Find the start position with the first ROC header (maybe there are idle patterns before...)
   else {
-    unsigned int count_rocs = 0;
+    bool found = false;
     for(unsigned int i = 0; i < length; i++) {
       if(find_roc_header(*data, &i, 0)) {
-	if(*pos == 0) *pos = i;
-	count_rocs++;
-	i--;
+	*pos = i;
+	found = true;
+	break;
       }
     }
-    LOG(logDEBUG3) << "Starting position after first ROC header: " << *pos;
     
-    if(count_rocs == 0) {
+    if(!found) {
       LOG(logERROR) << "GET_EVENT event contains no ROC header.";
       statistics.evt_invalid++;
       return DEC_ERROR_NO_ROC_HEADER;
     }
-    else if(noOfROC != count_rocs) {
-      LOG(logWARNING) << "GET_EVENT ROCS: PRESET " << noOfROC << " != DATA " << count_rocs << ". Skipped.";
-      statistics.evt_invalid++;
-      return DEC_ERROR_NO_OF_ROCS;
-    }
-    else LOG(logDEBUG) << "GET_EVENT::STATUS correctly detected " << count_rocs << " ROCs.";
+    else
+      LOG(logDEBUG3) << "Starting position after first ROC header: " << *pos;
   }
-
-  // FIXME trailer detection missing:
-  // if(flag & FLAG_HAVETBM) LOG(logDEBUG1) << "GET_EVENT::TBM_TRAILER";
-
+  
+  LOG(logDEBUG2) << "Pre-decoding event sane.";
   LOG(logDEBUG) << "GET_EVENT::STATUS event: " << length << " data words.";
+  statistics.evt_valid++;
+  return 0;
+}
+  
+
+
+int CMSPixelEventDecoder::post_check_sanity(std::vector< event > * evt, unsigned int rocs) {    
+
+  LOG(logDEBUG2) << "Checking post-decoding event sanity...";
+
+  if(noOfROC != rocs+1) {
+    LOG(logWARNING) << "GET_EVENT ROCS: PRESET " << noOfROC << " != DATA " << rocs+1 << ". Skipped.";
+    statistics.evt_invalid++;
+    return DEC_ERROR_NO_OF_ROCS;
+  }
+  else LOG(logDEBUG) << "GET_EVENT::STATUS correctly detected " << rocs+1 << " ROC(s).";
+
+  LOG(logDEBUG2) << "Post-decoding event sane.";
   statistics.evt_valid++;
   return 0;
 }

@@ -135,7 +135,8 @@ namespace CMSPixel {
     virtual int decode_hit(std::vector< int16_t > data, unsigned int * pos, unsigned int roc, event * hit) = 0;
             
     // These functions are the same no matter what data format we have:
-    int check_event_sanity(std::vector< int16_t> * data, unsigned int * pos);
+    int pre_check_sanity(std::vector< int16_t > * data, unsigned int * pos);
+    int post_check_sanity(std::vector< event > * evt, unsigned int rocs);
 
   };
 

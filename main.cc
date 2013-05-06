@@ -33,8 +33,8 @@ int main(int argc, char* argv[]) {
     //    std::cout << std::endl;
     }
 
-  while(0) {
-    if(dec->get_event(evt, timestamp) < DEC_ERROR_NO_OF_ROCS) break;
+  while(1) {
+    if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
     //    std::cout << std::endl;
   }
 
