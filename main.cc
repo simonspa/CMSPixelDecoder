@@ -16,17 +16,19 @@ int main(int argc, char* argv[]) {
 
   Log::ReportingLevel() = Log::FromString(argv[1] ? argv[1] : "DEBUG1");
 
-  const char * _cmsFile = "mtb.bin.mod.ana";
-  unsigned int _noOfROC = 16;
-  unsigned int flaggen = FLAG_HAVETBM;//FLAG_ALLOW_CORRUPT_ROC_HEADERS;//FLAG_HAVETBM;
+  const char * _cmsFile = "mtb.bin.tel.ral";
+  const char * _cms2File = "mtb.bin.tel.psi";
+  unsigned int _noOfROC = 8;
+  unsigned int flaggen = FLAG_ALLOW_CORRUPT_ROC_HEADERS;//0;//FLAG_HAVETBM;//FLAG_ALLOW_CORRUPT_ROC_HEADERS;
   std::vector<event> * evt = new std::vector<event>;
   long int timestamp = 0;
-  uint8_t ROCTYPE = ROC_PSI46V2;
+  uint8_t ROCTYPE = ROC_PSI46DIG;
   std::cout << "We have " << _noOfROC << " ROC of the type " << static_cast<int>(ROCTYPE) << std::endl;
   std::cout << "The flags are set to " << flaggen << std::endl;
   levelset testlevels;
 
-  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB(_cmsFile,_noOfROC,flaggen,ROCTYPE,"addressParameters.dat.mod");
+  //CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB(_cms2File,_noOfROC,flaggen,ROCTYPE,"addressParameters.dat.mod");
+  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderRAL(_cmsFile,_noOfROC,flaggen,ROCTYPE);
 
   for (int i = 0; i < 12; i++) {
     if(dec->get_event(evt, timestamp) == DEC_ERROR_INVALID_FILE) break;
@@ -49,6 +51,8 @@ int main(int argc, char* argv[]) {
     singledec = new CMSPixelEventDecoderDigital(_noOfROC,flaggen,ROCTYPE);
 
     delete singledec;*/
+
+  //  return 0;
 
   if(!unit_tests()) std::cout << "Unit testing failed!" << std::endl;
   else std::cout << "Unit testing successfully completed." << std::endl;
@@ -299,13 +303,13 @@ bool unit_tests() {
 
   Log::ReportingLevel() = Log::FromString("SUMMARY");
 
-  if(!test_analog_single()) return false;
+  //  if(!test_analog_single()) return false;
   //if(!test_digital_single()) return false;
 
-  if(!test_analog_module()) return false;
+  //  if(!test_analog_module()) return false;
   //if(!test_digital_module()) return false;
 
-  if(!test_telescope_psi()) return false;
+  //  if(!test_telescope_psi()) return false;
   if(!test_telescope_ral()) return false;
 
   return true;

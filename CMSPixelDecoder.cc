@@ -90,23 +90,42 @@ bool CMSPixelFileDecoderPSI_DTB::process_rawdata(std::vector< int16_t > * data)
 
 bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< int16_t > * rawdata) {
   // IPBus data format: we need to delete some additional headers from the test board.
-  // remove padding to 32bit words at the end of the event by reading the data length:
-  unsigned int event_length = ((rawdata->at(1)&0xffff0000) | (rawdata->at(0)&0x0000ffff)) - 14;
-            
+  // remove padding to 32bit words at the end of the event by reading the data length.
+
+  // IPBus Data Format:
+  // 0: 32 bit Header (programmable, agreed to be 0xFFFFFFFF)
+  // 1: 32 bit Event number from readout block (should always be contiguous)
+  // 2: 32 bit Event body length in bytes ('n'; need not be aligned to whole words)
+  // 3: 32 bit Event type / run number (programmable, 0xDEADBEEF in the example)
+  // 4 -: Pixel data, followed by 14 byte trailer
+  //
+  // The content of the trailer is:
+  //
+  // Bytes 3-0: Trigger number
+  // Bytes 7-4: Token number
+  // Bytes b-8: Timestamp (most significant 32b of 40b word, 1us ticks)
+  // Byte c: Timestamp (lower 8b)
+  // Byte d: Bits 1-0 are phase of the trigger pulse; bits 3-2 are phase of the received data
+
+  // We need to swap the endianness since the data block comes in scrumbled 8bit-blocks:
+  // D | C | B | A  ->  A | B | C | D
+  int16_t swap_msb = ((rawdata->at(1)>>8)&0x00ff | ((rawdata->at(1)&0x00ff)<<8));
+  int16_t swap_lsb = ((rawdata->at(0)>>8)&0x00ff | ((rawdata->at(0)&0x00ff)<<8));
+  unsigned int event_length = ((swap_msb<<16) | swap_lsb) - 14;
+  
   // Check for stupid event sizes:
-  if(event_length/2 > rawdata->size()) return false;
+  if(event_length/2 > rawdata->size()) {
+    LOG(logERROR) << "IPBus event length implausible: " << event_length << " bytes.";
+    return false;
+  }
+  else 
+    LOG(logDEBUG4) << "IPBus event length: " << event_length << " bytes.";
             
   // cut first 8 bytes from header:
   rawdata->erase(rawdata->begin(),rawdata->begin()+4);
   //  and last 14 bytes plus the padding from trailer:
   rawdata->erase(rawdata->begin() + (event_length/2 + event_length%2),rawdata->end());
             
-  // Swap endianness of the data:
-  for(unsigned int i = 0; i < rawdata->size(); i++) {
-    unsigned int swapped = ((rawdata->at(i)<<8)&0xff00) | ((rawdata->at(i)>>8)&0xff);
-    rawdata->at(i) = swapped;
-  }
-
   return true;
 }
 
@@ -168,6 +187,16 @@ bool CMSPixelFileDecoder::readWord(int16_t &word) {
   if(feof(mtbStream) || !fread(&a,sizeof(a),1,mtbStream) || !fread(&b,sizeof(b),1,mtbStream)) 
     return false;
   word = (b << 8) | a;
+  return true;
+}
+
+bool CMSPixelFileDecoderRAL::readWord(int16_t &word) {
+  unsigned char a, b;
+  if(feof(mtbStream) || !fread(&a,sizeof(a),1,mtbStream) || !fread(&b,sizeof(b),1,mtbStream)) 
+    return false;
+  // Do not swap endianness in the IPBus case:
+  word = (a << 8) | b;
+  //word = (b << 8) | a;
   return true;
 }
 

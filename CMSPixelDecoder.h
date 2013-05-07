@@ -237,11 +237,11 @@ namespace CMSPixel {
 
   protected:
     uint8_t theROC;
+    virtual bool readWord(int16_t &word);
+    FILE * mtbStream;
 
   private:
     bool chop_datastream(std::vector< int16_t > * rawdata);
-    bool readWord(int16_t &word);
-    FILE * mtbStream;
     long int cmstime;
     bool read_address_levels(const char* levelsFile, unsigned int rocs, levelset & addressLevels);
     levelset addressLevels;
@@ -250,6 +250,8 @@ namespace CMSPixel {
   class CMSPixelFileDecoderRAL : public CMSPixelFileDecoder {
   public:
   CMSPixelFileDecoderRAL(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE) : CMSPixelFileDecoder(FileName, rocs, flags, ROCTYPE, "") {};
+  private:
+    bool readWord(int16_t &word);
     inline bool word_is_data(unsigned short word) {
       // IPBus format starts with 0xFFFFFFFF, no other headers allowed.
       if(word == 0xFFFF) return true;
@@ -269,6 +271,7 @@ namespace CMSPixel {
 class CMSPixelFileDecoderPSI_ATB : public CMSPixelFileDecoder {
   public:
   CMSPixelFileDecoderPSI_ATB(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile) : CMSPixelFileDecoder(FileName, rocs, flags, ROCTYPE, addressFile) {};
+  private:
     inline bool word_is_data(unsigned short word) {
       if(word == 0x8001 || word == 0x8081 || word == 0x8005) return true;
       else return false;
@@ -287,6 +290,7 @@ class CMSPixelFileDecoderPSI_ATB : public CMSPixelFileDecoder {
 class CMSPixelFileDecoderPSI_DTB : public CMSPixelFileDecoder {
   public:
   CMSPixelFileDecoderPSI_DTB(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile) : CMSPixelFileDecoder(FileName, rocs, flags, ROCTYPE, addressFile) {};
+  private:
     inline bool word_is_data(unsigned short word) {
       if(word == 0x8501 || word == 0x8581 || word == 0x8505) return true;
       else return false;
