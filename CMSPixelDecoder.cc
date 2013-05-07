@@ -107,7 +107,7 @@ CMSPixelFileDecoder::CMSPixelFileDecoder(const char *FileName, unsigned int rocs
     if(!read_address_levels(addressFile,rocs,addressLevels))
       LOG(logERROR) << "Could not read address parameters correctly!";
     else
-      print_addresslevels(addressLevels);
+      LOG(logDEBUG) << print_addresslevels(addressLevels);
     evt = new CMSPixelEventDecoderAnalog(rocs, flags, ROCTYPE, addressLevels);
   }
   else {
@@ -312,26 +312,24 @@ bool CMSPixelFileDecoder::read_address_levels(const char* levelsFile, unsigned i
   return true;
 }
 
-void CMSPixelFileDecoder::print_addresslevels(levelset addLevels) {
+std::string CMSPixelFileDecoder::print_addresslevels(levelset addLevels) {
   std::stringstream os;
-  os << "STATUS TBM    header: ";
+  os << std::endl << "STATUS TBM    header: ";
   std::vector<int>::iterator it;
   for(it = addLevels.TBM.level.begin(); it < addLevels.TBM.level.end(); ++it)
     os << std::setw(5) << static_cast<int>(*it) << " ";
-  LOG(logDEBUG3) << os.str();
-  os.str("");
 
-  for (unsigned int iroc = 0; iroc < addLevels.address.size(); iroc++ ){
-    os << "STATUS ROC" << std::setw(2) << iroc << "  header: ";
+  for (unsigned int iroc = 0; iroc < addLevels.address.size(); iroc++ ) {
+    os << std::endl << "STATUS ROC" << std::setw(2) << iroc << "  header: ";
     for(it = addLevels.ROC[iroc].level.begin(); it < addLevels.ROC[iroc].level.end(); ++it)
       os << std::setw(5) << *it << " ";
-    LOG(logDEBUG3) << os.str();
-    os.str("");
+    os << std::endl;
+
     os << "STATUS ROC" << std::setw(2) << iroc << " address: ";
     for(it = addLevels.address[iroc].level.begin(); it < addLevels.address[iroc].level.end(); ++it)
       os << std::setw(5) << *it << " ";
-    LOG(logDEBUG3) << os.str();
   }
+  return os.str();
 }
 
 /*========================================================================*/
@@ -533,12 +531,18 @@ CMSPixelEventDecoderDigital::CMSPixelEventDecoderDigital(unsigned int rocs, int 
 }
 
 bool CMSPixelEventDecoderDigital::preprocessing(std::vector< int16_t > * data) {
+  // Nothing to do for digital chips here...
+  LOG(logDEBUG4) << print_data(data);
+  return true;
+}
+
+std::string CMSPixelEventDecoderDigital::print_data(std::vector< int16_t> * data) {
   // This simply prints the raw data, useful only for debugging.
   std::stringstream os;
   for(unsigned int i = 0; i < data->size();i++) 
     os << std::hex << get_bits(*data,i*L_GRANULARITY,L_GRANULARITY);
-  LOG(logDEBUG4) << os.str() << std::dec;
-  return true;
+  os << std::dec;
+  return os.str();
 }
 
 int CMSPixelEventDecoderDigital::get_bit(std::vector< int16_t > data, int bit_offset) {
@@ -604,6 +608,17 @@ bool CMSPixelEventDecoderDigital::find_tbm_header(std::vector< int16_t > data, u
   return false;
 }
 
+std::string CMSPixelEventDecoderDigital::print_hit(int hit) {
+  // Just print the hit data we have so far:
+  std::ostringstream os;
+  os << "hit: " << std::hex << hit << std::dec << ": ";
+  for(int i = 23; i >= 0; i--) {
+    os << ((hit>>i)&1);
+    if(i==4 || i==5|| i==9|| i==12|| i==15|| i==18|| i==21) os << ".";
+  }
+  return os.str();
+}
+
 int CMSPixelEventDecoderDigital::decode_hit(std::vector< int16_t > data, unsigned int * pos, unsigned int roc, event * pixhit)
 {
   if(L_GRANULARITY*data.size() - *pos < L_HIT) {
@@ -614,13 +629,7 @@ int CMSPixelEventDecoderDigital::decode_hit(std::vector< int16_t > data, unsigne
   int pixel_hit = get_bits(data,*pos,L_HIT);
   *pos += L_HIT; //jump to next hit.
     
-  std::ostringstream os;
-  os << "hit: " << std::hex << pixel_hit << std::dec << ": ";
-  for(int i = 23; i >= 0; i--) {
-    os << ((pixel_hit>>i)&1);
-    if(i==4 || i==5|| i==9|| i==12|| i==15|| i==18|| i==21) os << ".";
-  }
-  LOG(logDEBUG3) << os.str();
+  LOG(logDEBUG3) << print_hit(pixel_hit);
 
   // Double Column magic:
   //  dcol =  dcol msb        *6 + dcol lsb
@@ -685,16 +694,21 @@ CMSPixelEventDecoderAnalog::CMSPixelEventDecoderAnalog(unsigned int rocs, int fl
 
 bool CMSPixelEventDecoderAnalog::preprocessing(std::vector< int16_t > * data) {
   // Restoring analog levels being negative:
-  std::stringstream os;
   for(unsigned int i = 0; i < data->size();i++) {
     data->at(i) = data->at(i) & 0x0fff;
     if( data->at(i) & 0x0800 ) data->at(i) -= 4096; //hex 800 = 2048
-    os << std::dec << data->at(i) << " ";
   }
-  LOG(logDEBUG4) << os.str();
+  LOG(logDEBUG4) << print_data(data);
   return true;
 }
 
+std::string CMSPixelEventDecoderAnalog::print_data(std::vector< int16_t > * data) {
+  std::stringstream os;
+  for(unsigned int i = 0; i < data->size();i++) {
+    os << std::dec << data->at(i) << " ";
+  }
+  return os.str();
+}
 
 bool CMSPixelEventDecoderAnalog::find_roc_header(std::vector< int16_t > data, unsigned int * pos, unsigned int roc) {
 

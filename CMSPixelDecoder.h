@@ -176,6 +176,7 @@ namespace CMSPixel {
 
   private:
     int findBin(int adc, int nlevel, std::vector< int > level);
+    std::string print_data(std::vector< int16_t> * data);
     levelset addressLevels;
   };
 
@@ -223,6 +224,8 @@ namespace CMSPixel {
   private:
     int get_bit(std::vector< int16_t > data, int bit_offset);
     int get_bits(std::vector< int16_t > data, int bit_offset,int number_of_bits);
+    std::string print_data(std::vector< int16_t> * data);
+    std::string print_hit(int hit);
   };
 
 
@@ -242,7 +245,6 @@ namespace CMSPixel {
     virtual bool word_is_header(unsigned short word) = 0;
     virtual bool process_rawdata(std::vector< int16_t > * rawdata) = 0;
 
-    void print_addresslevels(levelset addLevels);
     CMSPixelStatistics statistics;
     CMSPixelEventDecoder * evt;
 
@@ -255,6 +257,7 @@ namespace CMSPixel {
     bool chop_datastream(std::vector< int16_t > * rawdata);
     long int cmstime;
     bool read_address_levels(const char* levelsFile, unsigned int rocs, levelset & addressLevels);
+    std::string print_addresslevels(levelset addLevels);
     levelset addressLevels;
   };
 
