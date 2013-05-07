@@ -22,7 +22,9 @@
 
 // Flags:
 #define FLAG_ALLOW_CORRUPT_ROC_HEADERS 1
-#define FLAG_HAVETBM 4
+#define FLAG_HAVETBM 2
+#define FLAG_12BITS_PER_WORD 4
+#define FLAG_IPBUS 8
 
 // Decoder errors:
 #define DEC_ERROR_EMPTY_EVENT -1
@@ -31,9 +33,10 @@
 #define DEC_ERROR_NO_TBM_HEADER -4
 #define DEC_ERROR_NO_ROC_HEADER -5
 #define DEC_ERROR_NO_OF_ROCS -6
-#define DEC_ERROR_NO_MORE_DATA -7
-#define DEC_ERROR_INVALID_FILE -8
-#define DEC_ERROR_INVALID_DATA -9
+#define DEC_ERROR_INVALID_EVENT -7
+#define DEC_ERROR_NO_MORE_DATA -8
+#define DEC_ERROR_INVALID_FILE -9
+
 
 // Sensor properties:
 #define ROCNUMDCOLS 26
@@ -88,11 +91,11 @@ namespace CMSPixel {
     // Number of invalid events (something is fishy with this)
     //  * No ROC headers / wrong number of ROC headers
     //  * Missing TBM Header or Trailer
-    //  * (currently not) Pixel decoding failed
     uint32_t evt_invalid;
     // Number of correctly decoded pixel hits
     uint32_t pixels_valid;
     // Number of pixel hits with invalid address or zero-bit (undecodable)
+    // Events containing only some invalid pixels are still delivered, only return value is set.
     uint32_t pixels_invalid;
 
 
@@ -128,7 +131,7 @@ namespace CMSPixel {
 
   private:
     // Purely virtual, to be implemented in the child classes (digital/analog):
-    inline virtual void load_constants() = 0;
+    inline virtual void load_constants(int flags) = 0;
     virtual bool preprocessing(std::vector< int16_t > * data) = 0;
     virtual bool find_roc_header(std::vector< int16_t > data, unsigned int * pos, unsigned int roc) = 0;
     virtual bool find_tbm_header(std::vector< int16_t > data, unsigned int pos) = 0;
@@ -153,7 +156,7 @@ namespace CMSPixel {
     CMSPixelEventDecoderAnalog(unsigned int rocs, int flags, uint8_t ROCTYPE, levelset addLevels);
 
   protected:
-    inline void load_constants() {
+    inline void load_constants(int flags) {
       // Lenth of different tokens:
       // Analog: all values given in data words (16bit)
       L_ROC_HEADER = 3;   // ROC header
@@ -188,17 +191,25 @@ namespace CMSPixel {
     CMSPixelEventDecoderDigital(unsigned int rocs, int flags, uint8_t ROCTYPE);
 
   protected:
-    inline void load_constants() {
+    inline void load_constants(int flags) {
       // Lenth of different tokens:
       // Digital: all values given in single bits
       L_ROC_HEADER = 12;   // ROC header
       L_HIT = 24;          // Hit length
-      L_GRANULARITY = 16;  // Data granularity (digital: bits)
+      
+      // Data granularity (digital: bits per word)
+      if(flags & FLAG_12BITS_PER_WORD)
+	L_GRANULARITY = 12;
+      else if(flags & FLAG_IPBUS)
+ 	L_GRANULARITY = 16;
+      else
+ 	L_GRANULARITY = 4;
 
       // Check whether we should have a TBM header or not:
       L_HEADER = 28;
       L_TRAILER = 28;
 
+      std::cout << "we have granularity " << L_GRANULARITY << std::endl;
       //L_HEADER = 8;
       //L_TRAILER = 28;
     };
@@ -249,8 +260,11 @@ namespace CMSPixel {
 
   class CMSPixelFileDecoderRAL : public CMSPixelFileDecoder {
   public:
-  CMSPixelFileDecoderRAL(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE) : CMSPixelFileDecoder(FileName, rocs, flags, ROCTYPE, "") {};
+  CMSPixelFileDecoderRAL(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE) : CMSPixelFileDecoder(FileName, rocs, addflags(flags), ROCTYPE, "") {};
   private:
+    inline int addflags(int flags) {
+      return (flags | FLAG_IPBUS);
+    };
     bool readWord(int16_t &word);
     inline bool word_is_data(unsigned short word) {
       // IPBus format starts with 0xFFFFFFFF, no other headers allowed.

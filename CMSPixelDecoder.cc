@@ -45,46 +45,15 @@ void CMSPixelStatistics::print() {
 
 bool CMSPixelFileDecoderPSI_ATB::process_rawdata(std::vector< int16_t > * data)
 {
-  if(!(theROC & ROC_PSI46V2 || theROC & ROC_PSI46XDB)) {
-    LOG(logDEBUG4) << "Compressing data from chip type " << static_cast<int>(theROC);
-    // Currently we need to dump some zero bits with the hybrid testboard setup...
-    // 0000 0000 0000 0111 -> 0111
-    std::vector< int16_t > rawdata = *data;
-    data->clear();
-
-    for(unsigned int i = 0; i < rawdata.size(); i+=4) {
-      unsigned short tempword = 0;
-      // Take four words and combine them, each word contains 4 bits in data:
-      int tail = rawdata.size() - i;
-      if(tail >= 4) tail = 4;
-
-      for(int j = 0; j < tail; j++) tempword = tempword | ((rawdata[i+j]&15) << (4*(3-j)));
-      data->push_back(tempword);
-    }
-  }
+  // Currently nothing to do here...
+  LOG(logDEBUG4) << "No need for raw data processing with PSI ATB.";
   return true;
 }
 
 bool CMSPixelFileDecoderPSI_DTB::process_rawdata(std::vector< int16_t > * data) 
 {
-  //FIXME will probably have 12-of-16 readout!
-  if(!(theROC & ROC_PSI46V2 || theROC & ROC_PSI46XDB)) {
-    LOG(logDEBUG4) << "Compressing data from chip type " << static_cast<int>(theROC);
-    // Currently we need to dump some zero bits with the hybrid testboard setup...
-    // 0000 0000 0000 0111 -> 0111
-    std::vector< int16_t > rawdata = *data;
-    data->clear();
-
-    for(unsigned int i = 0; i < rawdata.size(); i+=4) {
-      unsigned short tempword = 0;
-      // Take four words and combine them, each word contains 4 bits in data:
-      int tail = rawdata.size() - i;
-      if(tail >= 4) tail = 4;
-
-      for(int j = 0; j < tail; j++) tempword = tempword | ((rawdata[i+j]&15) << (4*(3-j)));
-      data->push_back(tempword);
-    }
-  }
+  // Currently nothing to do here...
+  LOG(logDEBUG4) << "No need for raw data processing with PSI DTB.";
   return true;
 }
 
@@ -100,7 +69,6 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< int16_t > * rawdata) {
   // 4 -: Pixel data, followed by 14 byte trailer
   //
   // The content of the trailer is:
-  //
   // Bytes 3-0: Trigger number
   // Bytes 7-4: Token number
   // Bytes b-8: Timestamp (most significant 32b of 40b word, 1us ticks)
@@ -163,7 +131,7 @@ int CMSPixelFileDecoder::get_event(std::vector<event> * decevt, long int & times
   if(!mtbStream) return DEC_ERROR_INVALID_FILE;
 
   std::vector < int16_t > data;
-  LOG(logDEBUG) << "GET_EVENT: Start chopping file.";
+  LOG(logDEBUG) << "STATUS Start chopping file.";
 
   // Cut off the next event from the filestream:
   if(!chop_datastream(&data)) return DEC_ERROR_NO_MORE_DATA;
@@ -196,7 +164,6 @@ bool CMSPixelFileDecoderRAL::readWord(int16_t &word) {
     return false;
   // Do not swap endianness in the IPBus case:
   word = (a << 8) | b;
-  //word = (b << 8) | a;
   return true;
 }
 
@@ -211,7 +178,7 @@ bool CMSPixelFileDecoder::chop_datastream(std::vector< int16_t > * rawdata) {
   while (!word_is_data(word)) {
     // If header is detected read more words:
     if(word_is_trigger(word)) {
-      LOG(logDEBUG1) << "GET_EVENT::STATUS trigger detected: " << std::hex << word << std::dec;
+      LOG(logDEBUG1) << "STATUS trigger detected: " << std::hex << word << std::dec;
       statistics.head_trigger++;
 
       // read 3 more words after header:
@@ -225,17 +192,17 @@ bool CMSPixelFileDecoder::chop_datastream(std::vector< int16_t > * rawdata) {
       LOG(logDEBUG1) << "Timestamp: " << cmstime;
     }
     else if(word_is_header(word) ) {
-      LOG(logDEBUG1) << "GET_EVENT::STATUS header detected : " << std::hex << word << std::dec;
+      LOG(logDEBUG1) << "STATUS header detected : " << std::hex << word << std::dec;
       // read 3 more words after header:
       for(int h = 1; h < 4; h++ ) if(!readWord(word)) return false;
     }
     else {
-      LOG(logDEBUG1) << "GET_EVENT::STATUS drop: " << std::hex << word << std::dec;
+      LOG(logDEBUG1) << "STATUS drop: " << std::hex << word << std::dec;
     }
     if(!readWord(word)) return false;
   }
     
-  LOG(logDEBUG) << "GET_EVENT::STATUS data header     : " << std::hex << word << std::dec;
+  LOG(logDEBUG) << "STATUS data header     : " << std::hex << word << std::dec;
   statistics.head_data++;
 
   // read 3 more words after header:
@@ -387,7 +354,7 @@ CMSPixelEventDecoder::~CMSPixelEventDecoder() {
 
 int CMSPixelEventDecoder::get_event(std::vector< int16_t > data, std::vector<event> * evt) {
 
-  LOG(logDEBUG) << "GET_EVENT: Start decoding.";
+  LOG(logDEBUG) << "Start decoding.";
   LOG(logDEBUG1) << "Received " << 16*data.size() << " bits of event data.";
   evt->clear();
   statistics.init();
@@ -395,7 +362,7 @@ int CMSPixelEventDecoder::get_event(std::vector< int16_t > data, std::vector<eve
   unsigned int pos = 0;
   
   // Some data needs preprocessing, map uint to the integer level values (analog chips)
-  if(!preprocessing(&data)) return DEC_ERROR_INVALID_DATA;
+  if(!preprocessing(&data)) return DEC_ERROR_INVALID_EVENT;
 
   // Check sanity
   int status = pre_check_sanity(&data,&pos);
@@ -418,7 +385,7 @@ int CMSPixelEventDecoder::get_event(std::vector< int16_t > data, std::vector<eve
   status = post_check_sanity(evt,roc);
   if(status != 0) return status;
 
-  LOG(logDEBUG) << "GET_EVENT::STATUS end of event processing.";
+  LOG(logDEBUG) << "STATUS end of event processing.";
   return 0;
 }
 
@@ -431,16 +398,16 @@ int CMSPixelEventDecoder::pre_check_sanity(std::vector< int16_t > * data, unsign
   // Check presence of TBM tokens if necessary:
   if(flag & FLAG_HAVETBM) {
     if(!find_tbm_header(*data,0)) {
-      LOG(logWARNING) << "GET_EVENT: event contained no valid TBM_HEADER. Skipped.";
+      LOG(logWARNING) << "Event contained no valid TBM_HEADER. Skipped.";
       return DEC_ERROR_NO_TBM_HEADER;
     }
-    else LOG(logDEBUG) << "GET_EVENT::STATUS TBM_HEADER correctly detected.";
+    else LOG(logDEBUG) << "STATUS TBM_HEADER correctly detected.";
 
     if(!find_tbm_trailer(*data,length - L_TRAILER)) {
-      LOG(logWARNING) << "GET_EVENT: event contained no valid TBM_TRAILER. Skipped.";
+      LOG(logWARNING) << "Event contained no valid TBM_TRAILER. Skipped.";
       return DEC_ERROR_NO_TBM_HEADER;
     }
-    else LOG(logDEBUG) << "GET_EVENT::STATUS TBM_TRAILER correctly detected.";
+    else LOG(logDEBUG) << "STATUS TBM_TRAILER correctly detected.";
 
     // If we have TBM headers check for them and remove them from data:
     if(L_TRAILER > 0) {
@@ -459,15 +426,15 @@ int CMSPixelEventDecoder::pre_check_sanity(std::vector< int16_t > * data, unsign
 
   // Checking for empty events and skip them if necessary:
   if( length <= noOfROC*L_ROC_HEADER ){
-    LOG(logINFO) << "GET_EVENT: event is empty, " << length << " words <= " <<  noOfROC*L_ROC_HEADER << ".";
+    LOG(logINFO) << "Event is empty, " << length << " words <= " <<  noOfROC*L_ROC_HEADER << ".";
     statistics.evt_empty++;
     return DEC_ERROR_EMPTY_EVENT;
   }
   // There might even be a huge event:
   else if( length > 2222*L_GRANULARITY ) {
-    LOG(logWARNING) << "GET_EVENT: detected huge event (" << length << " words). Skipped.";
+    LOG(logERROR) << "Detected huge event (" << length << " words). Skipped.";
     statistics.evt_invalid++;
-    return DEC_ERROR_INVALID_DATA;
+    return DEC_ERROR_INVALID_EVENT;
   }
 
 
@@ -494,7 +461,7 @@ int CMSPixelEventDecoder::pre_check_sanity(std::vector< int16_t > * data, unsign
     }
     
     if(!found) {
-      LOG(logERROR) << "GET_EVENT event contains no ROC header.";
+      LOG(logERROR) << "Event contains no ROC header.";
       statistics.evt_invalid++;
       return DEC_ERROR_NO_ROC_HEADER;
     }
@@ -503,7 +470,7 @@ int CMSPixelEventDecoder::pre_check_sanity(std::vector< int16_t > * data, unsign
   }
   
   LOG(logDEBUG2) << "Pre-decoding event sane.";
-  LOG(logDEBUG) << "GET_EVENT::STATUS event: " << length << " data words.";
+  LOG(logDEBUG) << "STATUS event: " << length << " data words.";
   return 0;
 }
   
@@ -514,14 +481,15 @@ int CMSPixelEventDecoder::post_check_sanity(std::vector< event > * evt, unsigned
   LOG(logDEBUG2) << "Checking post-decoding event sanity...";
 
   if(noOfROC != rocs+1) {
-    LOG(logWARNING) << "GET_EVENT ROCS: PRESET " << noOfROC << " != DATA " << rocs+1 << ". Skipped.";
+    LOG(logERROR) << "STATUS ROCs: preset " << noOfROC << " != data " << rocs+1 << ". Skipped.";
     statistics.evt_invalid++;
+    evt->clear();
     return DEC_ERROR_NO_OF_ROCS;
   }
-  else LOG(logDEBUG) << "GET_EVENT::STATUS correctly detected " << rocs+1 << " ROC(s).";
+  else LOG(logDEBUG) << "STATUS correctly detected " << rocs+1 << " ROC(s).";
 
   if(evt->size() == 0) {
-    LOG(logINFO) << "GET_EVENT: event is empty, no hits decoded.";
+    LOG(logINFO) << "Event is empty, no hits decoded.";
     statistics.evt_empty++;
     return DEC_ERROR_EMPTY_EVENT;
   }
@@ -534,7 +502,6 @@ int CMSPixelEventDecoder::post_check_sanity(std::vector< event > * evt, unsigned
 
 bool CMSPixelEventDecoder::convertDcolToCol(int dcol, int pix, int & col, int & row)
 {
-  LOG(logDEBUG3) << "converting dcol " << dcol << " pix " << pix;
   if( dcol < 0 || dcol >= ROCNUMDCOLS || pix < 2 || pix > 161) 
     return false;
 
@@ -545,7 +512,7 @@ bool CMSPixelEventDecoder::convertDcolToCol(int dcol, int pix, int & col, int & 
   if( col < 0 || col > ROCNUMCOLS || row < 0 || row > ROCNUMROWS ) 
     return false;
 
-  LOG(logDEBUG3) << " to col " << col << " row " << row;
+  LOG(logDEBUG3) << "Converted dcol " << dcol << " pix " << pix << " to col " << col << " row " << row;
   return true;
 }
 
@@ -560,15 +527,16 @@ bool CMSPixelEventDecoder::convertDcolToCol(int dcol, int pix, int & col, int & 
 CMSPixelEventDecoderDigital::CMSPixelEventDecoderDigital(unsigned int rocs, int flags, uint8_t ROCTYPE) : CMSPixelEventDecoder(rocs, flags, ROCTYPE)
 {
   LOG(logDEBUG) << "Preparing a digital decoder instance...";
-  // Loading constants:
+  // Loading constants and flags:
   LOG(logDEBUG2) << "Loading constants...";
-  load_constants();
+  load_constants(flags);
 }
 
 bool CMSPixelEventDecoderDigital::preprocessing(std::vector< int16_t > * data) {
+  // This simply prints the raw data, useful only for debugging.
   std::stringstream os;
   for(unsigned int i = 0; i < data->size();i++) 
-    os << std::hex << data->at(i) << " ";
+    os << std::hex << get_bits(*data,i*L_GRANULARITY,L_GRANULARITY);
   LOG(logDEBUG4) << os.str() << std::dec;
   return true;
 }
@@ -584,6 +552,7 @@ int CMSPixelEventDecoderDigital::get_bit(std::vector< int16_t > data, int bit_of
   // get bit, counting from most significant bit to least significant bit
   int ibit = (L_GRANULARITY-1) - (bit_offset-ibyte*L_GRANULARITY);
   int bitval = (byteval >> ibit)&1;
+  //LOG(logDEBUG4) << "returning value " << bitval << " at position " << ibit << " in short " << std::hex << byteval << std::dec;
   return bitval;
 }
 
@@ -592,6 +561,7 @@ int CMSPixelEventDecoderDigital::get_bits(std::vector< int16_t > data, int bit_o
   for (int ibit = 0; ibit < number_of_bits; ibit++) {
     value = 2*value+get_bit(data,bit_offset+ibit);
   }
+  //LOG(logDEBUG4) << "delivering " << std::hex << value << std::dec << " requested at offset " << bit_offset << " with length " << number_of_bits;
   return value;
 }
 
@@ -602,7 +572,7 @@ bool CMSPixelEventDecoderDigital::find_roc_header(std::vector< int16_t > data, u
   int search_head = get_bits(data, *pos, L_ROC_HEADER);
 
   // Ugly hack to compensate for the chip sending correct ROC headers: 0x7fX might be 0x3fX too...
-  if((flag & FLAG_ALLOW_CORRUPT_ROC_HEADERS) && (search_head == 0x7f0 || search_head == 0x3f8 || search_head == 0x3f9 || search_head == 0x3fa || search_head == 0x3fb)) {
+  if((flag & FLAG_ALLOW_CORRUPT_ROC_HEADERS) && (search_head == 0x7f0 || search_head == 0x7fc || search_head == 0x3f8 || search_head == 0x3f9 || search_head == 0x3fa || search_head == 0x3fb)) {
     LOG(logDEBUG2) << "Found ROC header with bit error (" 
 		   << std::hex << std::setw(3) << search_head << ") after " << std::dec << *pos << " bit.";
     *pos += L_ROC_HEADER; // jump to next position.    
@@ -681,13 +651,13 @@ int CMSPixelEventDecoderDigital::decode_hit(std::vector< int16_t > data, unsigne
     pixhit->col = col;
     pixhit->row = row;
 
-    LOG(logINFO) << "GET_EVENT::HIT ROC" << std::setw(2) << roc << " | pix " << pixhit->col << " " << pixhit->row << ", raw " << pixhit->raw;
+    LOG(logINFO) << "HIT ROC" << std::setw(2) << roc << " | pix " << pixhit->col << " " << pixhit->row << ", adc " << pixhit->raw;
     CMSPixelEventDecoder::statistics.pixels_valid++;
     return 0;
   }
   else {
     // Something went wrong with the decoding:
-    LOG(logWARNING) << "GET_EVENT failed to convert address of [" << std::hex << pixel_hit << std::dec << "]: dcol " << dcol << " drow " << drow << " (ROC" << roc << ", raw: " << pulseheight << ")";
+    LOG(logWARNING) << "Failed to convert address of [" << std::hex << pixel_hit << std::dec << "]: dcol " << dcol << " drow " << drow << " (ROC" << roc << ", adc: " << pulseheight << ")";
     CMSPixelEventDecoder::statistics.pixels_invalid++;
     return DEC_ERROR_INVALID_ADDRESS;
   }
@@ -707,7 +677,7 @@ CMSPixelEventDecoderAnalog::CMSPixelEventDecoderAnalog(unsigned int rocs, int fl
   LOG(logDEBUG) << "Preparing an analog decoder instance...";
   // Loading constants:
   LOG(logDEBUG2) << "Loading constants...";
-  load_constants();
+  load_constants(flags);
     
   // Try to read the address levels file
   addressLevels = addLevels;
@@ -794,13 +764,12 @@ int CMSPixelEventDecoderAnalog::decode_hit(std::vector< int16_t > data, unsigned
     pixhit->col = col;
     pixhit->row = row;
 
-    LOG(logINFO) << "GET_EVENT::HIT ROC" << std::setw(2) << roc << " | pix " << pixhit->col << " " << pixhit->row << ", raw " << pixhit->raw;
+    LOG(logINFO) << "HIT ROC" << std::setw(2) << roc << " | pix " << pixhit->col << " " << pixhit->row << ", adc " << pixhit->raw;
     CMSPixelEventDecoder::statistics.pixels_valid++;
     return 0;
   }
   else {
-    LOG(logDEBUG4) << "raw: " << data[*pos+0] << " " << data[*pos+1] << " " << data[*pos+2] << " " << data[*pos+3] << " " << data[*pos+4];
-    LOG(logWARNING) << "GET_EVENT failed to convert address: dcol " << dcol << " drow " << drow << " (ROC" << roc << ", raw: " << aa << ")";
+    LOG(logWARNING) << "Failed to convert address: dcol " << dcol << " drow " << drow << " (ROC" << roc << ", adc: " << aa << ")";
     CMSPixelEventDecoder::statistics.pixels_invalid++;
     return DEC_ERROR_INVALID_ADDRESS;
   }

@@ -17,21 +17,21 @@ int main(int argc, char* argv[]) {
   Log::ReportingLevel() = Log::FromString(argv[1] ? argv[1] : "DEBUG1");
 
   const char * _cmsFile = "mtb.bin.tel.ral";
-  const char * _cms2File = "mtb.bin.tel.psi";
-  unsigned int _noOfROC = 8;
-  unsigned int flaggen = FLAG_ALLOW_CORRUPT_ROC_HEADERS;//0;//FLAG_HAVETBM;//FLAG_ALLOW_CORRUPT_ROC_HEADERS;
+  const char * _cms2File = "mtb.bin.ana";
+  unsigned int _noOfROC = 1;
+  unsigned int flaggen = FLAG_ALLOW_CORRUPT_ROC_HEADERS;//0;//FLAG_HAVETBM;//FLAG_ALLOW_CORRUPT_ROC_HEADERS//FLAG_12BITS_PER_WORD;
   std::vector<event> * evt = new std::vector<event>;
   long int timestamp = 0;
-  uint8_t ROCTYPE = ROC_PSI46DIG;
+  uint8_t ROCTYPE = ROC_PSI46V2;
   std::cout << "We have " << _noOfROC << " ROC of the type " << static_cast<int>(ROCTYPE) << std::endl;
   std::cout << "The flags are set to " << flaggen << std::endl;
   levelset testlevels;
 
-  //CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB(_cms2File,_noOfROC,flaggen,ROCTYPE,"addressParameters.dat.mod");
-  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderRAL(_cmsFile,_noOfROC,flaggen,ROCTYPE);
+  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB(_cms2File,_noOfROC,flaggen,ROCTYPE,"addressParameters.dat.single");
+  //CMSPixelFileDecoder * dec = new CMSPixelFileDecoderRAL(_cmsFile,_noOfROC,flaggen,ROCTYPE);
 
   for (int i = 0; i < 12; i++) {
-    if(dec->get_event(evt, timestamp) == DEC_ERROR_INVALID_FILE) break;
+    if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
     //    std::cout << "Pixels in this event: " << dec->evt->statistics.pixels_valid << std::endl;
     //    std::cout << "Pixels in total:      " << dec->statistics.pixels_valid << std::endl;
     //    std::cout << std::endl;
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
 
     delete singledec;*/
 
-  //  return 0;
+  return 0;
 
   if(!unit_tests()) std::cout << "Unit testing failed!" << std::endl;
   else std::cout << "Unit testing successfully completed." << std::endl;
@@ -90,7 +90,7 @@ bool test_analog_single()
   ref.pixels_valid = 37105;
   ref.evt_invalid = 0;
   ref.pixels_invalid = 11586;
-  double ref_timing = 0.41;
+  double ref_timing = 0.42;
 
   std::vector<event> * evt = new std::vector<event>;
   long int timestamp;
@@ -128,12 +128,12 @@ bool test_digital_single()
   // REFERENCE:
   CMSPixelStatistics ref;
   ref.head_data = ref.head_trigger = 165195;
-  ref.evt_empty = 77665;
-  ref.evt_valid = 31829;
-  ref.pixels_valid = 37105;
-  ref.evt_invalid = 0;
-  ref.pixels_invalid = 11586;
-  double ref_timing = 3.6;
+  ref.evt_empty = 87801;
+  ref.evt_valid = 75522;
+  ref.pixels_valid = 168980;
+  ref.evt_invalid = 1871;
+  ref.pixels_invalid = 2368;
+  double ref_timing = 2.84;
 
   std::vector<event> * evt = new std::vector<event>;
   long int timestamp;
@@ -215,11 +215,11 @@ bool test_telescope_psi()
   CMSPixelStatistics ref;
   ref.head_trigger = 24954;
   ref.head_data = 24816;
-  ref.evt_empty = 1865;
-  ref.evt_valid = 19755;
-  ref.pixels_valid = 1384663;
-  ref.evt_invalid = 3195;
-  ref.pixels_invalid = 74709;
+  ref.evt_empty = 1854;
+  ref.evt_valid = 19579;
+  ref.pixels_valid = 1336046;
+  ref.evt_invalid = 3382;
+  ref.pixels_invalid = 69444;
   double ref_timing = 18.36;
 
   std::vector<event> * evt = new std::vector<event>;
@@ -237,7 +237,7 @@ bool test_telescope_psi()
 
   // Timing check:
   if(elapsed_secs <= 0.92*ref_timing || elapsed_secs >= 1.08*ref_timing) {
-    std::cout << "     Timing requirements NOT met!" << std::endl;
+    std::cout << "     Timing requirements NOT met: " << ref_timing << "sec." << std::endl;
   }
 
   // Decoding check:
@@ -303,13 +303,13 @@ bool unit_tests() {
 
   Log::ReportingLevel() = Log::FromString("SUMMARY");
 
-  //  if(!test_analog_single()) return false;
-  //if(!test_digital_single()) return false;
+  if(!test_analog_single()) return false;
+  if(!test_digital_single()) return false;
 
-  //  if(!test_analog_module()) return false;
+  if(!test_analog_module()) return false;
   //if(!test_digital_module()) return false;
 
-  //  if(!test_telescope_psi()) return false;
+  if(!test_telescope_psi()) return false;
   if(!test_telescope_ral()) return false;
 
   return true;
