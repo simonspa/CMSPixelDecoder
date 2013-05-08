@@ -442,30 +442,29 @@ int CMSPixelEventDecoder::pre_check_sanity(std::vector< int16_t > * data, unsign
   // Ugly hack for single analog/xdb chip readout without TBM or emulator: ROC UB level seems broken there...
   if((theROC & ROC_PSI46V2 || theROC & ROC_PSI46XDB) && !(flag & FLAG_HAVETBM) && noOfROC == 1) {
     // Just set the starting position after the first ROC header, assuming no idle pattern:
-    *pos = L_ROC_HEADER+1;
-    LOG(logDEBUG3) << "FIXME(singleAnaROC): Set starting position to: " << *pos;
+    //    *pos = L_ROC_HEADER+1;
+    //    LOG(logDEBUG3) << "FIXME(singleAnaROC): Set starting position to: " << *pos;
     data->erase(data->end() - 6,data->end());
     LOG(logDEBUG3) << "FIXME(singleAnaROC): Removed some trailers.";
   }
+
   // Find the start position with the first ROC header (maybe there are idle patterns before...)
-  else {
-    bool found = false;
-    for(unsigned int i = 0; i < length; i++) {
-      if(find_roc_header(*data, &i, 0)) {
-	*pos = i;
-	found = true;
-	break;
-      }
+  bool found = false;
+  for(unsigned int i = 0; i < length; i++) {
+    if(find_roc_header(*data, &i, 0)) {
+      *pos = i;
+      found = true;
+      break;
     }
-    
-    if(!found) {
-      LOG(logERROR) << "Event contains no ROC header.";
-      statistics.evt_invalid++;
-      return DEC_ERROR_NO_ROC_HEADER;
-    }
-    else
-      LOG(logDEBUG3) << "Starting position after first ROC header: " << *pos;
   }
+    
+  if(!found) {
+    LOG(logERROR) << "Event contains no ROC header.";
+    statistics.evt_invalid++;
+    return DEC_ERROR_NO_ROC_HEADER;
+  }
+  else
+    LOG(logDEBUG3) << "Starting position after first ROC header: " << *pos;
   
   LOG(logDEBUG2) << "Pre-decoding event sane.";
   LOG(logDEBUG) << "STATUS event: " << length << " data words.";
@@ -711,12 +710,18 @@ std::string CMSPixelEventDecoderAnalog::print_data(std::vector< int16_t > * data
 }
 
 bool CMSPixelEventDecoderAnalog::find_roc_header(std::vector< int16_t > data, unsigned int * pos, unsigned int roc) {
-
   // Did we reach max number of ROCs read in from address levels file?
   if(roc >= addressLevels.ROC.size()) return false;
     
+  // Corrupt ROC header for single analog ROCs w/o TBM: somehow this looks like Black, UltraBlack:
+  if ((flag & FLAG_ALLOW_CORRUPT_ROC_HEADERS) && findBin(data[*pos],2,addressLevels.ROC[roc].level) == 1 
+	  && findBin(data[*pos+1],2,addressLevels.ROC[roc].level) == 0 ) {
+    LOG(logDEBUG1) << "Found corrupt ROC header ("<< std::setw(5) << data[*pos] << " " << std::setw(5) << data[*pos+1] << ") after " << std::dec << *pos << " bits.";
+    *pos += L_ROC_HEADER;
+    return true;
+  }
   // ROC header signature: UltraBlack, Black, lastDAC
-  if(     findBin(data[*pos],2,addressLevels.ROC[roc].level) == 0 
+  else if(findBin(data[*pos],2,addressLevels.ROC[roc].level) == 0 
 	  && findBin(data[*pos+1],2,addressLevels.ROC[roc].level) == 1 ) {
     LOG(logDEBUG1) << "Found ROC header ("<< std::setw(5) << data[*pos] << " " << std::setw(5) << data[*pos+1] << ") after " << std::dec << *pos << " bits.";
     *pos += L_ROC_HEADER;

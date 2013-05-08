@@ -18,19 +18,19 @@ int main(int argc, char* argv[]) {
 
   const char * _cmsFile = "mtb.bin.tel.ral";
   const char * _cms2File = "mtb.bin.ana";
-  unsigned int _noOfROC = 1;
+  unsigned int _noOfROC = 8;
   unsigned int flaggen = FLAG_ALLOW_CORRUPT_ROC_HEADERS;//0;//FLAG_HAVETBM;//FLAG_ALLOW_CORRUPT_ROC_HEADERS//FLAG_12BITS_PER_WORD;
   std::vector<event> * evt = new std::vector<event>;
   long int timestamp = 0;
-  uint8_t ROCTYPE = ROC_PSI46V2;
+  uint8_t ROCTYPE = ROC_PSI46DIG;
   std::cout << "We have " << _noOfROC << " ROC of the type " << static_cast<int>(ROCTYPE) << std::endl;
   std::cout << "The flags are set to " << flaggen << std::endl;
   levelset testlevels;
 
-  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB(_cms2File,_noOfROC,flaggen,ROCTYPE,"addressParameters.dat.single");
-  //CMSPixelFileDecoder * dec = new CMSPixelFileDecoderRAL(_cmsFile,_noOfROC,flaggen,ROCTYPE);
+  //CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB(_cms2File,_noOfROC,flaggen,ROCTYPE,"addressParameters.dat.single");
+  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderRAL(_cmsFile,_noOfROC,flaggen,ROCTYPE);
 
-  for (int i = 0; i < 12; i++) {
+  for (int i = 0; i < 0; i++) {
     if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
     //    std::cout << "Pixels in this event: " << dec->evt->statistics.pixels_valid << std::endl;
     //    std::cout << "Pixels in total:      " << dec->statistics.pixels_valid << std::endl;
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
 
     delete singledec;*/
 
-  return 0;
+  //  return 0;
 
   if(!unit_tests()) std::cout << "Unit testing failed!" << std::endl;
   else std::cout << "Unit testing successfully completed." << std::endl;
@@ -85,16 +85,16 @@ bool test_analog_single()
   // REFERENCE:
   CMSPixelStatistics ref;
   ref.head_data = ref.head_trigger = 109495;
-  ref.evt_empty = 77665;
-  ref.evt_valid = 31829;
-  ref.pixels_valid = 37105;
+  ref.evt_empty = 84265; //77665;
+  ref.evt_valid = 25229; //31829;
+  ref.pixels_valid = 29954; //37105;
   ref.evt_invalid = 0;
-  ref.pixels_invalid = 11586;
-  double ref_timing = 0.42;
+  ref.pixels_invalid = 8718; //11586;
+  double ref_timing = 0.26;
 
   std::vector<event> * evt = new std::vector<event>;
   long int timestamp;
-  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB("mtb.bin.ana",1,0,ROC_PSI46V2,"addressParameters.dat.single");
+  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB("mtb.bin.ana",1,FLAG_ALLOW_CORRUPT_ROC_HEADERS,ROC_PSI46V2,"addressParameters.dat.single");
 
   clock_t begin = clock();
   while(1)
@@ -133,7 +133,7 @@ bool test_digital_single()
   ref.pixels_valid = 168980;
   ref.evt_invalid = 1871;
   ref.pixels_invalid = 2368;
-  double ref_timing = 2.84;
+  double ref_timing = 1.69;
 
   std::vector<event> * evt = new std::vector<event>;
   long int timestamp;
@@ -176,7 +176,7 @@ bool test_analog_module()
   ref.pixels_valid = 1488121;
   ref.evt_invalid = 0;
   ref.pixels_invalid = 0;
-  double ref_timing = 6.22;
+  double ref_timing = 3.76;
 
   std::vector<event> * evt = new std::vector<event>;
   long int timestamp;
@@ -220,7 +220,7 @@ bool test_telescope_psi()
   ref.pixels_valid = 1336046;
   ref.evt_invalid = 3382;
   ref.pixels_invalid = 69444;
-  double ref_timing = 18.36;
+  double ref_timing = 7.3;
 
   std::vector<event> * evt = new std::vector<event>;
   long int timestamp;
@@ -267,13 +267,26 @@ bool test_telescope_ral()
   ref.pixels_invalid = 74709;
   double ref_timing = 18.36;
 
+  /*
+- 15:23:23.108 SUMMARY:   Events empty:        9705
+- 15:23:23.108 SUMMARY:   Events valid:        9660
+- 15:23:23.108 SUMMARY:     Pixels valid:    428704
+- 15:23:23.108 SUMMARY:   Events invalid:      7962
+- 15:23:23.108 SUMMARY:     Pixels invalid:  116826
+    */
+
   std::vector<event> * evt = new std::vector<event>;
   long int timestamp;
   CMSPixelFileDecoder * dec = new CMSPixelFileDecoderRAL("mtb.bin.tel.ral",8,FLAG_ALLOW_CORRUPT_ROC_HEADERS,ROC_PSI46DIG);
 
+  Log::ReportingLevel() = Log::FromString("DEBUG4");
+
   clock_t begin = clock();
-  while(1)
+  int i = 0;
+  while(i<100) {
+    i++;
     if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
+  }
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
   std::cout << "     Timing: " << elapsed_secs << "sec." << std::endl;
