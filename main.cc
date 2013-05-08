@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
   //CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB(_cms2File,_noOfROC,flaggen,ROCTYPE,"addressParameters.dat.single");
   CMSPixelFileDecoder * dec = new CMSPixelFileDecoderRAL(_cmsFile,_noOfROC,flaggen,ROCTYPE);
 
-  for (int i = 0; i < 0; i++) {
+  for (int i = 0; i < 300; i++) {
     if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
     //    std::cout << "Pixels in this event: " << dec->evt->statistics.pixels_valid << std::endl;
     //    std::cout << "Pixels in total:      " << dec->statistics.pixels_valid << std::endl;
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
 
     delete singledec;*/
 
-  //  return 0;
+  return 0;
 
   if(!unit_tests()) std::cout << "Unit testing failed!" << std::endl;
   else std::cout << "Unit testing successfully completed." << std::endl;
@@ -279,14 +279,9 @@ bool test_telescope_ral()
   long int timestamp;
   CMSPixelFileDecoder * dec = new CMSPixelFileDecoderRAL("mtb.bin.tel.ral",8,FLAG_ALLOW_CORRUPT_ROC_HEADERS,ROC_PSI46DIG);
 
-  Log::ReportingLevel() = Log::FromString("DEBUG4");
-
   clock_t begin = clock();
-  int i = 0;
-  while(i<100) {
-    i++;
+  while(1)
     if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
-  }
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
   std::cout << "     Timing: " << elapsed_secs << "sec." << std::endl;
