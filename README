@@ -25,11 +25,15 @@
 ** Statistics for Single Event Decoding
    can be obtained until the object is destructed by calling
 
-   dec->statistics.<variable>
+   $ eventdec->statistics.<variable>
   
    For a list of available variables see below.
 
 ** Statistics for File Decoding
+   can be obtained until the object is destructed by calling
+
+   If the logging level is set to SUMMARY or higher (see below) the destructor
+   of the File Decoder class will print the statistics summary.
 
 ** List of statistics variables
    uint32_t head_data:
@@ -55,6 +59,7 @@
   CMSPixelDecoder has a builtin logging feature which can be used to debug the
   data decoding. It provides several logging levels, the output is directed to
   stderr. You can chose from the following detail levels:
+
   * QUIET    - No output at all.
   * SUMMARY  - As QUITE but prints the statistics summary when destructed
   * ERROR    - Prints all errors encountered during the decoding (invalid events)
@@ -62,6 +67,10 @@
   * INFO     - Prints information about found hits
   * DEBUG    - Informs about the current status of the decoding steps
   * DEBUG1-4 - additional debugging levels printing even more stuff to stderr.
+
+  The current logging level can be changed at any time using
+  
+  $ Log::ReportingLevel() = Log::FromString(<LEVEL>);
 
   Be aware of the fact that enabled logging slows down the encoding by quite a
   bit. So only turn it on if you need it!

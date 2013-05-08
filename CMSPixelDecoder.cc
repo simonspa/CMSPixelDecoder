@@ -23,7 +23,8 @@ void CMSPixelStatistics::init() {
   head_data = head_trigger = 0;
   evt_valid = evt_empty = evt_invalid = 0;
   pixels_valid = pixels_invalid = 0;
-};
+}
+
 void CMSPixelStatistics::update(CMSPixelStatistics stats) {
   head_data += stats.head_data;
   head_trigger += stats.head_trigger;
@@ -33,6 +34,12 @@ void CMSPixelStatistics::update(CMSPixelStatistics stats) {
   pixels_valid += stats.pixels_valid;
   pixels_invalid += stats.pixels_invalid;
 };
+
+std::string CMSPixelStatistics::get() {
+  // FIXME print statistics into string here...
+  return "";
+}
+
 void CMSPixelStatistics::print() {
   LOG(logSUMMARY) << "TB Trigger Marker: " << std::setw(8) <<  head_trigger;
   LOG(logSUMMARY) << "TB Data Marker:    " << std::setw(8) <<  head_data;
@@ -41,7 +48,7 @@ void CMSPixelStatistics::print() {
   LOG(logSUMMARY) << "    Pixels valid:  " << std::setw(8) <<  pixels_valid;
   LOG(logSUMMARY) << "  Events invalid:  " << std::setw(8) <<  evt_invalid;
   LOG(logSUMMARY) << "    Pixels invalid:" << std::setw(8) <<  pixels_invalid;
-};
+}
 
 bool CMSPixelFileDecoderPSI_ATB::process_rawdata(std::vector< int16_t > * data)
 {
@@ -125,6 +132,9 @@ CMSPixelFileDecoder::CMSPixelFileDecoder(const char *FileName, unsigned int rocs
     LOG(logDEBUG1) << " ...successfully.";
 }
 
+CMSPixelFileDecoder::~CMSPixelFileDecoder() {
+  LOG(logSUMMARY) << statistics.get();
+}
 
 int CMSPixelFileDecoder::get_event(std::vector<event> * decevt, long int & timestamp) {
   // Check if stream is open:

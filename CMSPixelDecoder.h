@@ -80,6 +80,7 @@ namespace CMSPixel {
     void init();
     void update(CMSPixelStatistics stats);
     void print();
+    std::string get();
     // Number of detected testboard data markers
     uint32_t head_data;
     // Number of detected testboard trigger markers
@@ -234,6 +235,7 @@ namespace CMSPixel {
   class CMSPixelFileDecoder {
   public:
     CMSPixelFileDecoder(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile);
+    ~CMSPixelFileDecoder();
     int get_event(std::vector<event> * decevt, long int & timestamp);
 
     virtual bool word_is_data(unsigned short word) = 0;
