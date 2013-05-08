@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
   //CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB(_cms2File,_noOfROC,flaggen,ROCTYPE,"addressParameters.dat.single");
   CMSPixelFileDecoder * dec = new CMSPixelFileDecoderRAL(_cmsFile,_noOfROC,flaggen,ROCTYPE);
 
-  for (int i = 0; i < 300; i++) {
+  for (int i = 0; i < 12; i++) {
     if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
     //    std::cout << "Pixels in this event: " << dec->evt->statistics.pixels_valid << std::endl;
     //    std::cout << "Pixels in total:      " << dec->statistics.pixels_valid << std::endl;
@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
 
     delete singledec;*/
 
-  return 0;
+  //  return 0;
 
   if(!unit_tests()) std::cout << "Unit testing failed!" << std::endl;
   else std::cout << "Unit testing successfully completed." << std::endl;
@@ -260,20 +260,12 @@ bool test_telescope_ral()
   CMSPixelStatistics ref;
   ref.head_trigger = 0;
   ref.head_data = 27328;
-  ref.evt_empty = 1865;
-  ref.evt_valid = 19755;
-  ref.pixels_valid = 1384663;
-  ref.evt_invalid = 3195;
-  ref.pixels_invalid = 74709;
-  double ref_timing = 18.36;
-
-  /*
-- 15:23:23.108 SUMMARY:   Events empty:        9705
-- 15:23:23.108 SUMMARY:   Events valid:        9660
-- 15:23:23.108 SUMMARY:     Pixels valid:    428704
-- 15:23:23.108 SUMMARY:   Events invalid:      7962
-- 15:23:23.108 SUMMARY:     Pixels invalid:  116826
-    */
+  ref.evt_empty = 9705;
+  ref.evt_valid = 9660;
+  ref.pixels_valid = 428704;
+  ref.evt_invalid = 7962;
+  ref.pixels_invalid = 116826;
+  double ref_timing = 1.78;
 
   std::vector<event> * evt = new std::vector<event>;
   long int timestamp;
