@@ -24,7 +24,7 @@
 #define FLAG_ALLOW_CORRUPT_ROC_HEADERS 1
 #define FLAG_HAVETBM 2
 #define FLAG_12BITS_PER_WORD 4
-#define FLAG_IPBUS 8
+#define FLAG_16BITS_PER_WORD 8
 
 // Decoder errors:
 #define DEC_ERROR_EMPTY_EVENT -1
@@ -201,7 +201,7 @@ namespace CMSPixel {
       // Data granularity (digital: bits per word)
       if(flags & FLAG_12BITS_PER_WORD)
 	L_GRANULARITY = 12;
-      else if(flags & FLAG_IPBUS)
+      else if(flags & FLAG_16BITS_PER_WORD)
  	L_GRANULARITY = 16;
       else
  	L_GRANULARITY = 4;
@@ -209,10 +209,6 @@ namespace CMSPixel {
       // Check whether we should have a TBM header or not:
       L_HEADER = 28;
       L_TRAILER = 28;
-
-      std::cout << "we have granularity " << L_GRANULARITY << std::endl;
-      //L_HEADER = 8;
-      //L_TRAILER = 28;
     };
 
     bool preprocessing(std::vector< int16_t > * data);            
@@ -266,7 +262,7 @@ namespace CMSPixel {
   CMSPixelFileDecoderRAL(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE) : CMSPixelFileDecoder(FileName, rocs, addflags(flags), ROCTYPE, "") {};
   private:
     inline int addflags(int flags) {
-      return (flags | FLAG_IPBUS);
+      return (flags | FLAG_16BITS_PER_WORD);
     };
     bool readWord(int16_t &word);
     inline bool word_is_data(unsigned short word) {

@@ -17,8 +17,8 @@ int main(int argc, char* argv[]) {
   Log::ReportingLevel() = Log::FromString(argv[1] ? argv[1] : "DEBUG1");
 
   const char * _cmsFile = "mtb.bin.tel.ral";
-  const char * _cms2File = "mtb.bin.ana";
-  unsigned int _noOfROC = 8;
+  const char * _cms2File = "mtb.bin.dig";
+  unsigned int _noOfROC = 1;
   unsigned int flaggen = FLAG_ALLOW_CORRUPT_ROC_HEADERS;//0;//FLAG_HAVETBM;//FLAG_ALLOW_CORRUPT_ROC_HEADERS//FLAG_12BITS_PER_WORD;
   std::vector<event> * evt = new std::vector<event>;
   long int timestamp = 0;
@@ -27,8 +27,8 @@ int main(int argc, char* argv[]) {
   std::cout << "The flags are set to " << flaggen << std::endl;
   levelset testlevels;
 
-  //CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB(_cms2File,_noOfROC,flaggen,ROCTYPE,"addressParameters.dat.single");
-  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderRAL(_cmsFile,_noOfROC,flaggen,ROCTYPE);
+  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB(_cms2File,_noOfROC,flaggen,ROCTYPE,"addressParameters.dat.single");
+  //CMSPixelFileDecoder * dec = new CMSPixelFileDecoderRAL(_cmsFile,_noOfROC,flaggen,ROCTYPE);
 
   for (int i = 0; i < 12; i++) {
     if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
@@ -42,17 +42,88 @@ int main(int argc, char* argv[]) {
   delete evt;
   delete dec;
 
-  /*  std::cout << "Now running singe call tests...";
 
+
+  // ###################################################################################
+
+  std::cout << "Now running singe call tests...\n";
+  Log::ReportingLevel() = Log::FromString("INFO");
+
+  std::vector<event> * singleevt = new std::vector<event>;
+  std::vector<int16_t> singledat;
   CMSPixelEventDecoder * singledec;
-  if(ROCTYPE & ROC_PSI46V2 || ROCTYPE & ROC_PSI46XDB)
-    singledec = new CMSPixelEventDecoderAnalog(_noOfROC,flaggen,ROCTYPE,testlevels);
-  else
-    singledec = new CMSPixelEventDecoderDigital(_noOfROC,flaggen,ROCTYPE);
 
-    delete singledec;*/
+  std::cout << "RAL IPBus:\n";
+  // Trying IPBus:
+  singledat.push_back(0x7f87);
+  singledat.push_back(0xf87f);
+  singledat.push_back(0x87f8);
+  singledat.push_back(0x7f87);
+  singledat.push_back(0xfa77);
+  singledat.push_back(0xd400);
+  singledat.push_back(0x7f87);
+  singledat.push_back(0xf84b);
 
-  //  return 0;
+  flaggen = FLAG_16BITS_PER_WORD | FLAG_ALLOW_CORRUPT_ROC_HEADERS;
+  singledec = new CMSPixelEventDecoderDigital(8,flaggen,ROC_PSI46DIG);
+  std::cout << "Return: " << singledec->get_event(singledat,singleevt) << std::endl;
+  delete singledec;
+  singledat.clear();
+
+  std::cout << "PSI Digital 4bit:\n";
+  singledat.push_back(0x000f);
+  singledat.push_back(0x000f);
+  singledat.push_back(0x0007);
+  singledat.push_back(0x000f);
+  singledat.push_back(0x0008);
+  singledat.push_back(0x0003);
+  singledat.push_back(0x0001);
+  singledat.push_back(0x000d);
+  singledat.push_back(0x0007);
+  singledat.push_back(0x0006);
+  singledat.push_back(0x0002);
+  singledat.push_back(0x000f);
+  singledat.push_back(0x000f);
+  singledat.push_back(0x000f);
+  singledat.push_back(0x000f);
+  singledat.push_back(0x000f);
+
+  flaggen = FLAG_ALLOW_CORRUPT_ROC_HEADERS;
+  singledec = new CMSPixelEventDecoderDigital(1,flaggen,ROC_PSI46DIG);
+  std::cout << "Return: " << singledec->get_event(singledat,singleevt) << std::endl;
+  delete singledec;
+  singledat.clear();
+
+
+  std::cout << "PSI Digital 12bit:\n";
+  singledat.push_back(0x0ff7);
+  singledat.push_back(0x0f83);
+  singledat.push_back(0x01d7);
+  singledat.push_back(0x062f);
+  singledat.push_back(0x0fff);
+
+  flaggen = FLAG_12BITS_PER_WORD | FLAG_ALLOW_CORRUPT_ROC_HEADERS;
+  singledec = new CMSPixelEventDecoderDigital(1,flaggen,ROC_PSI46DIG);
+  std::cout << "Return: " << singledec->get_event(singledat,singleevt) << std::endl;
+  delete singledec;
+  singledat.clear();
+
+
+  std::cout << "PSI Digital 16bit:\n";
+  singledat.push_back(0xff7f);
+  singledat.push_back(0x831d);
+  singledat.push_back(0x762f);
+
+  flaggen = FLAG_16BITS_PER_WORD | FLAG_ALLOW_CORRUPT_ROC_HEADERS;
+  singledec = new CMSPixelEventDecoderDigital(1,flaggen,ROC_PSI46DIG);
+  std::cout << "Return: " << singledec->get_event(singledat,singleevt) << std::endl;
+  delete singledec;
+  singledat.clear();
+
+
+  delete singleevt;
+
+  return 0;
 
   if(!unit_tests()) std::cout << "Unit testing failed!" << std::endl;
   else std::cout << "Unit testing successfully completed." << std::endl;

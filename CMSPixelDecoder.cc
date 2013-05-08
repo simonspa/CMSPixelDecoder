@@ -218,7 +218,7 @@ bool CMSPixelFileDecoder::chop_datastream(std::vector< int16_t > * rawdata) {
 
   //FIXME For IPBus readout check the next header words, too - they should be header again:
   if(!readWord(word)) return false;
-  /*  if(ipbus && !tb->word_is_header(word)) {
+  /*  if(flags & ipbus && !tb->word_is_header(word)) {
       rawdata->push_back(word);
       goto morewords;
       }
@@ -439,11 +439,8 @@ int CMSPixelEventDecoder::pre_check_sanity(std::vector< int16_t > * data, unsign
   // Maybe we deleted something, recompute length:
   length = L_GRANULARITY*data->size();
 
-  // Ugly hack for single analog/xdb chip readout without TBM or emulator: ROC UB level seems broken there...
+  // Ugly hack for single analog/xdb chip readout without TBM or emulator: we have some testboard trailer...
   if((theROC & ROC_PSI46V2 || theROC & ROC_PSI46XDB) && !(flag & FLAG_HAVETBM) && noOfROC == 1) {
-    // Just set the starting position after the first ROC header, assuming no idle pattern:
-    //    *pos = L_ROC_HEADER+1;
-    //    LOG(logDEBUG3) << "FIXME(singleAnaROC): Set starting position to: " << *pos;
     data->erase(data->end() - 6,data->end());
     LOG(logDEBUG3) << "FIXME(singleAnaROC): Removed some trailers.";
   }
