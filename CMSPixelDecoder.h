@@ -377,7 +377,7 @@ class CMSPixelFileDecoderPSI_DTB : public CMSPixelFileDecoder {
 
   inline TLogLevel& Log::ReportingLevel()
   {
-    static TLogLevel reportingLevel = logDEBUG4;
+    static TLogLevel reportingLevel = logSUMMARY;
     return reportingLevel;
   }
 
