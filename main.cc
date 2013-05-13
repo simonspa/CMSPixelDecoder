@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
 
   delete singleevt;
 
-  return 0;
+  //return 0;
 
   if(!unit_tests()) std::cout << "Unit testing failed!" << std::endl;
   else std::cout << "Unit testing successfully completed." << std::endl;
@@ -172,7 +172,7 @@ bool test_analog_single()
     if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-  std::cout << "     Timing: " << elapsed_secs << "sec." << std::endl;
+  std::cout << "     Timing: " << elapsed_secs << "sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
   delete evt;
   dec->statistics.print();
 
@@ -215,7 +215,7 @@ bool test_digital_single()
     if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-  std::cout << "     Timing: " << elapsed_secs << "sec." << std::endl;
+  std::cout << "     Timing: " << elapsed_secs << "sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
   delete evt;
   dec->statistics.print();
 
@@ -258,7 +258,7 @@ bool test_analog_module()
     if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-  std::cout << "     Timing: " << elapsed_secs << "sec." << std::endl;
+  std::cout << "     Timing: " << elapsed_secs << "sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
   delete evt;
   dec->statistics.print();
 
@@ -302,7 +302,7 @@ bool test_telescope_psi()
     if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-  std::cout << "     Timing: " << elapsed_secs << "sec." << std::endl;
+  std::cout << "     Timing: " << elapsed_secs << "sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
   delete evt;
   dec->statistics.print();
 
@@ -347,7 +347,7 @@ bool test_telescope_ral()
     if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-  std::cout << "     Timing: " << elapsed_secs << "sec." << std::endl;
+  std::cout << "     Timing: " << elapsed_secs << "sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
   delete evt;
   dec->statistics.print();
 
