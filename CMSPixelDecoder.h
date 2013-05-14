@@ -241,6 +241,7 @@ namespace CMSPixel {
     virtual bool word_is_data(unsigned short word) = 0;
     virtual bool word_is_trigger(unsigned short word) = 0;
     virtual bool word_is_header(unsigned short word) = 0;
+    virtual bool word_is_2nd_header(unsigned short word) = 0;
     virtual bool process_rawdata(std::vector< int16_t > * rawdata) = 0;
 
     CMSPixelStatistics statistics;
@@ -250,10 +251,10 @@ namespace CMSPixel {
     uint8_t theROC;
     virtual bool readWord(int16_t &word);
     FILE * mtbStream;
+    long int cmstime;
 
   private:
     bool chop_datastream(std::vector< int16_t > * rawdata);
-    long int cmstime;
     bool read_address_levels(const char* levelsFile, unsigned int rocs, levelset & addressLevels);
     std::string print_addresslevels(levelset addLevels);
     levelset addressLevels;
@@ -280,6 +281,10 @@ namespace CMSPixel {
       if(word == 0xFFFF) return true;
       else return false;
     };
+    inline bool word_is_2nd_header(unsigned short word) {
+      // IPBus header is 32bit, so check second part (also 0xFFFF):
+      return word_is_header(word);
+    };
     bool process_rawdata(std::vector< int16_t > * rawdata);
   };
 
@@ -299,6 +304,10 @@ class CMSPixelFileDecoderPSI_ATB : public CMSPixelFileDecoder {
       if(word == 0x8001 || word == 0x8081 || word == 0x8005 || word == 0x8004 || word == 0x8002 || word == 0x8008 || word == 0x8010) return true;
       else return false;
     };
+    inline bool word_is_2nd_header(unsigned short word) {
+      // PSI ATB features 16bit headers only.
+      return true;
+    };
     bool process_rawdata(std::vector< int16_t > * rawdata);
   };
 
@@ -317,6 +326,10 @@ class CMSPixelFileDecoderPSI_DTB : public CMSPixelFileDecoder {
     inline bool word_is_header(unsigned short word) {
       if(word == 0x8501 || word == 0x8581 || word == 0x8505 || word == 0x8504 || word == 0x8502 || word == 0x8508 || word == 0x8510) return true;
       else return false;
+    };
+    inline bool word_is_2nd_header(unsigned short word) {
+      // PSI DTB features 16bit headers only.
+      return true;
     };
     bool process_rawdata(std::vector< int16_t > * rawdata);
   };

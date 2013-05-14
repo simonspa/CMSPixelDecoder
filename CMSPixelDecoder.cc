@@ -81,7 +81,7 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< int16_t > * rawdata) {
   // Bytes b-8: Timestamp (most significant 32b of 40b word, 1us ticks)
   // Byte c: Timestamp (lower 8b)
   // Byte d: Bits 1-0 are phase of the trigger pulse; bits 3-2 are phase of the received data
-
+  
   // We need to swap the endianness since the data block comes in scrumbled 8bit-blocks:
   // D | C | B | A  ->  A | B | C | D
   int16_t swap_msb = ((rawdata->at(1)>>8)&0x00ff | ((rawdata->at(1)&0x00ff)<<8));
@@ -95,7 +95,12 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< int16_t > * rawdata) {
   }
   else 
     LOG(logDEBUG4) << "IPBus event length: " << event_length << " bytes.";
-            
+  
+  // Read the timestamp from the trailer:
+
+  LOG(logDEBUG4) << "IPBus timestamp: " << cmstime << "us.";
+
+
   // cut first 8 bytes from header:
   rawdata->erase(rawdata->begin(),rawdata->begin()+4);
   //  and last 14 bytes plus the padding from trailer:
@@ -228,12 +233,12 @@ bool CMSPixelFileDecoder::chop_datastream(std::vector< int16_t > * rawdata) {
 
   //FIXME For IPBus readout check the next header words, too - they should be header again:
   if(!readWord(word)) return false;
-  /*  if(flags & ipbus && !tb->word_is_header(word)) {
-      rawdata->push_back(word);
-      goto morewords;
-      }
-      else LOG(logDEBUG1) << "Double-checked header.";
-  */
+  if(!word_is_2nd_header(word)) {
+    rawdata->push_back(word);
+    goto morewords;
+  }
+  else LOG(logDEBUG4) << "Double-checked header, was " << std::hex << word << std::dec;
+  
   LOG(logDEBUG1) << "Raw data array size: " << rawdata->size() << ", so " << 16*rawdata->size() << " bits.";
     
   // Rewind one word to detect the header correctly later on:

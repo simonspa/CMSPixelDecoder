@@ -16,34 +16,6 @@ int main(int argc, char* argv[]) {
 
   Log::ReportingLevel() = Log::FromString(argv[1] ? argv[1] : "DEBUG1");
 
-  const char * _cmsFile = "mtb.bin.tel.ral";
-  const char * _cms2File = "mtb.bin.dig";
-  unsigned int _noOfROC = 1;
-  unsigned int flaggen = FLAG_ALLOW_CORRUPT_ROC_HEADERS;//0;//FLAG_HAVETBM;//FLAG_ALLOW_CORRUPT_ROC_HEADERS//FLAG_12BITS_PER_WORD;
-  std::vector<event> * evt = new std::vector<event>;
-  long int timestamp = 0;
-  uint8_t ROCTYPE = ROC_PSI46DIG;
-  std::cout << "We have " << _noOfROC << " ROC of the type " << static_cast<int>(ROCTYPE) << std::endl;
-  std::cout << "The flags are set to " << flaggen << std::endl;
-  levelset testlevels;
-
-  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB(_cms2File,_noOfROC,flaggen,ROCTYPE,"addressParameters.dat.single");
-  //CMSPixelFileDecoder * dec = new CMSPixelFileDecoderRAL(_cmsFile,_noOfROC,flaggen,ROCTYPE);
-
-  for (int i = 0; i < 12; i++) {
-    if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
-    //    std::cout << "Pixels in this event: " << dec->evt->statistics.pixels_valid << std::endl;
-    //    std::cout << "Pixels in total:      " << dec->statistics.pixels_valid << std::endl;
-    //    std::cout << std::endl;
-    }
-
-  dec->statistics.print();
-
-  delete evt;
-  delete dec;
-
-
-
   // ###################################################################################
 
   std::cout << "Now running singe call tests...\n";
@@ -120,10 +92,9 @@ int main(int argc, char* argv[]) {
   delete singledec;
   singledat.clear();
 
-
   delete singleevt;
 
-  //return 0;
+  // ###################################################################################
 
   if(!unit_tests()) std::cout << "Unit testing failed!" << std::endl;
   else std::cout << "Unit testing successfully completed." << std::endl;
@@ -133,11 +104,6 @@ int main(int argc, char* argv[]) {
 
 bool compare(CMSPixelStatistics reference, CMSPixelStatistics measurement)
 {
-  /*  std::cout << "REF" << std::endl;
-  reference.print();
-  std::cout << "MEAS" << std::endl;
-  measurement.print();*/
-
   if(reference.head_data != measurement.head_data) return false;
   if(reference.head_trigger != measurement.head_trigger) return false;
   if(reference.evt_valid != measurement.evt_valid) return false;
