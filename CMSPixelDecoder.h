@@ -236,7 +236,7 @@ namespace CMSPixel {
   public:
     CMSPixelFileDecoder(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile);
     ~CMSPixelFileDecoder();
-    int get_event(std::vector<event> * decevt, long int & timestamp);
+    int get_event(std::vector<event> * decevt, int64_t & timestamp);
 
     virtual bool word_is_data(unsigned short word) = 0;
     virtual bool word_is_trigger(unsigned short word) = 0;
@@ -251,7 +251,7 @@ namespace CMSPixel {
     uint8_t theROC;
     virtual bool readWord(int16_t &word);
     FILE * mtbStream;
-    long int cmstime;
+    int64_t cmstime;
 
   private:
     bool chop_datastream(std::vector< int16_t > * rawdata);

@@ -97,7 +97,7 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< int16_t > * rawdata) {
     LOG(logDEBUG4) << "IPBus event length: " << event_length << " bytes.";
   
   // Read the timestamp from the trailer:
-
+  
   LOG(logDEBUG4) << "IPBus timestamp: " << cmstime << "us.";
 
 
@@ -141,7 +141,7 @@ CMSPixelFileDecoder::~CMSPixelFileDecoder() {
   LOG(logSUMMARY) << statistics.get();
 }
 
-int CMSPixelFileDecoder::get_event(std::vector<event> * decevt, long int & timestamp) {
+int CMSPixelFileDecoder::get_event(std::vector<event> * decevt, int64_t & timestamp) {
   // Check if stream is open:
   if(!mtbStream) return DEC_ERROR_INVALID_FILE;
 

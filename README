@@ -49,7 +49,7 @@
    the get_event method. In addition to single event decoding the timestamp of
    the trigger is returned, if this data is present in the testboard event
    headers:
-     int get_event(std::vector<event> * decevt, long int & timestamp);
+     int get_event(std::vector<event> * decevt, int64_t & timestamp);
    "decevt" is the decoded event and "timestamp" the trigger time stamp.
 
    The decoding statistics can be obtained for either the most recently decoded
