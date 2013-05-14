@@ -81,12 +81,13 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< int16_t > * rawdata) {
   // Bytes b-8: Timestamp (most significant 32b of 40b word, 1us ticks)
   // Byte c: Timestamp (lower 8b)
   // Byte d: Bits 1-0 are phase of the trigger pulse; bits 3-2 are phase of the received data
-  
+
   // We need to swap the endianness since the data block comes in scrumbled 8bit-blocks:
   // D | C | B | A  ->  A | B | C | D
-  int16_t swap_msb = ((rawdata->at(1)>>8)&0x00ff | ((rawdata->at(1)&0x00ff)<<8));
-  int16_t swap_lsb = ((rawdata->at(0)>>8)&0x00ff | ((rawdata->at(0)&0x00ff)<<8));
-  unsigned int event_length = ((swap_msb<<16) | swap_lsb) - 14;
+  uint32_t event_length = ((rawdata->at(1)<<24)&0xff000000 | 
+			   (rawdata->at(1)<<8)&0xff0000 | 
+			   (rawdata->at(0)<<8)&0xff00 | 
+			   (rawdata->at(0)>>8)&0xff) - 14;
   
   // Check for stupid event sizes:
   if(event_length/2 > rawdata->size()) {
@@ -97,9 +98,23 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< int16_t > * rawdata) {
     LOG(logDEBUG4) << "IPBus event length: " << event_length << " bytes.";
   
   // Read the timestamp from the trailer:
-  
-  LOG(logDEBUG4) << "IPBus timestamp: " << cmstime << "us.";
+  int16_t stamp_pos = event_length/2+8;
+  if(event_length%2 == 0) {
+    cmstime = ((uint64_t)rawdata->at(stamp_pos+1)<<32)&0xff00000000 | 
+      (rawdata->at(stamp_pos+1)<<16)&0xff000000 | 
+      (rawdata->at(stamp_pos)<<16)&0xff0000 | 
+      (rawdata->at(stamp_pos))&0xff00 | 
+      (rawdata->at(stamp_pos+2)>>8)&0xff;
+  }
+  else {
+    cmstime = ((uint64_t)rawdata->at(stamp_pos+2)<<24)&0xff00000000 | 
+    (rawdata->at(stamp_pos+1)<<24)&0xff000000 | 
+    (rawdata->at(stamp_pos+1)<<8)&0xff0000 | 
+    (rawdata->at(stamp_pos)<<8)&0xff00 | 
+    (rawdata->at(stamp_pos+2))&0xff;
+  }
 
+  LOG(logDEBUG4) << "IPBus timestamp: " << std::hex << cmstime << std::dec << " = " << cmstime << "us.";
 
   // cut first 8 bytes from header:
   rawdata->erase(rawdata->begin(),rawdata->begin()+4);
@@ -438,6 +453,7 @@ int CMSPixelEventDecoder::pre_check_sanity(std::vector< int16_t > * data, unsign
   else LOG(logDEBUG2) << "Not checking for TBM presence.";
 
   // Checking for empty events and skip them if necessary:
+  // FIXME maybe skip this check to make it more flexible and thorough? Emptiness will be checked after decoding...
   if( length <= noOfROC*L_ROC_HEADER ){
     LOG(logINFO) << "Event is empty, " << length << " words <= " <<  noOfROC*L_ROC_HEADER << ".";
     statistics.evt_empty++;
