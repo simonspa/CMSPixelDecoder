@@ -26,6 +26,7 @@ void CMSPixelStatistics::init() {
 }
 
 void CMSPixelStatistics::update(CMSPixelStatistics stats) {
+  data_blocks += stats.data_blocks;
   head_data += stats.head_data;
   head_trigger += stats.head_trigger;
   evt_valid += stats.evt_valid;
@@ -41,12 +42,16 @@ std::string CMSPixelStatistics::get() {
 }
 
 void CMSPixelStatistics::print() {
+  LOG(logSUMMARY) << "Data blocks read : " << std::setw(8) <<  data_blocks;
+
   LOG(logSUMMARY) << "TB Trigger Marker: " << std::setw(8) <<  head_trigger;
   LOG(logSUMMARY) << "TB Data Marker:    " << std::setw(8) <<  head_data;
+
   LOG(logSUMMARY) << "  Events empty:    " << std::setw(8) <<  evt_empty;
   LOG(logSUMMARY) << "  Events valid:    " << std::setw(8) <<  evt_valid;
-  LOG(logSUMMARY) << "    Pixels valid:  " << std::setw(8) <<  pixels_valid;
   LOG(logSUMMARY) << "  Events invalid:  " << std::setw(8) <<  evt_invalid;
+
+  LOG(logSUMMARY) << "    Pixels valid:  " << std::setw(8) <<  pixels_valid;
   LOG(logSUMMARY) << "    Pixels invalid:" << std::setw(8) <<  pixels_invalid;
 }
 
@@ -156,7 +161,7 @@ CMSPixelFileDecoder::~CMSPixelFileDecoder() {
   LOG(logSUMMARY) << statistics.get();
 }
 
-int CMSPixelFileDecoder::get_event(std::vector<event> * decevt, int64_t & timestamp) {
+int CMSPixelFileDecoder::get_event(std::vector<pixel> * decevt, int64_t & timestamp) {
   // Check if stream is open:
   if(!mtbStream) return DEC_ERROR_INVALID_FILE;
 
@@ -178,7 +183,6 @@ int CMSPixelFileDecoder::get_event(std::vector<event> * decevt, int64_t & timest
 
   return status;
 }
-
 
 bool CMSPixelFileDecoder::readWord(int16_t &word) {
   unsigned char a, b;
@@ -380,7 +384,7 @@ CMSPixelEventDecoder::~CMSPixelEventDecoder() {
   // Nothing to do.
 }
 
-int CMSPixelEventDecoder::get_event(std::vector< int16_t > data, std::vector<event> * evt) {
+int CMSPixelEventDecoder::get_event(std::vector< int16_t > data, std::vector<pixel> * evt) {
 
   LOG(logDEBUG) << "Start decoding.";
   LOG(logDEBUG1) << "Received " << 16*data.size() << " bits of event data.";
@@ -398,7 +402,7 @@ int CMSPixelEventDecoder::get_event(std::vector< int16_t > data, std::vector<eve
 
   // Init ROC id:
   unsigned int roc = 0;
-  event tmp;
+  pixel tmp;
     
   LOG(logDEBUG3) << "Looping over event data with granularity " << L_GRANULARITY << ", " << L_GRANULARITY*data.size() << " iterations.";
         
@@ -463,7 +467,7 @@ int CMSPixelEventDecoder::pre_check_sanity(std::vector< int16_t > * data, unsign
   else if( length > 2222*L_GRANULARITY ) {
     LOG(logERROR) << "Detected huge event (" << length << " words). Skipped.";
     statistics.evt_invalid++;
-    return DEC_ERROR_INVALID_EVENT;
+    return DEC_ERROR_HUGE_EVENT;
   }
 
 
@@ -501,7 +505,7 @@ int CMSPixelEventDecoder::pre_check_sanity(std::vector< int16_t > * data, unsign
   
 
 
-int CMSPixelEventDecoder::post_check_sanity(std::vector< event > * evt, unsigned int rocs) {    
+int CMSPixelEventDecoder::post_check_sanity(std::vector< pixel > * evt, unsigned int rocs) {    
 
   LOG(logDEBUG2) << "Checking post-decoding event sanity...";
 
@@ -540,8 +544,6 @@ bool CMSPixelEventDecoder::convertDcolToCol(int dcol, int pix, int & col, int & 
   LOG(logDEBUG3) << "Converted dcol " << dcol << " pix " << pix << " to col " << col << " row " << row;
   return true;
 }
-
-
 
 /*========================================================================*/
 /*          CMSPixel Event Decoder                                        */
@@ -646,7 +648,7 @@ std::string CMSPixelEventDecoderDigital::print_hit(int hit) {
   return os.str();
 }
 
-int CMSPixelEventDecoderDigital::decode_hit(std::vector< int16_t > data, unsigned int * pos, unsigned int roc, event * pixhit)
+int CMSPixelEventDecoderDigital::decode_hit(std::vector< int16_t > data, unsigned int * pos, unsigned int roc, pixel * pixhit)
 {
   if(L_GRANULARITY*data.size() - *pos < L_HIT) {
     LOG(logDEBUG1) << "Dropping " << L_GRANULARITY*data.size() - *pos << " bit at the end of the event.";
@@ -782,7 +784,7 @@ bool CMSPixelEventDecoderAnalog::find_tbm_header(std::vector< int16_t > data, un
   else return true;
 }
 
-int CMSPixelEventDecoderAnalog::decode_hit(std::vector< int16_t > data, unsigned int * pos, unsigned int roc, event * pixhit) {
+int CMSPixelEventDecoderAnalog::decode_hit(std::vector< int16_t > data, unsigned int * pos, unsigned int roc, pixel * pixhit) {
   if(L_GRANULARITY*data.size() - *pos < L_HIT) {
     LOG(logDEBUG4) << "Not enough data for a pixel hit.";
     *pos = L_GRANULARITY*data.size();   // Set pointer to the end of data.
@@ -828,5 +830,3 @@ int CMSPixelEventDecoderAnalog::findBin(int adc, int nlevel, std::vector< int > 
   for( int i = 0; i < nlevel; i++ ) if( adc >= level[i] && adc < level[i+1] ) return i;
   return nlevel;
 }
-
-

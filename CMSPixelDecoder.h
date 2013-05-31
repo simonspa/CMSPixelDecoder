@@ -33,9 +33,10 @@
 #define DEC_ERROR_NO_TBM_HEADER -4
 #define DEC_ERROR_NO_ROC_HEADER -5
 #define DEC_ERROR_NO_OF_ROCS -6
-#define DEC_ERROR_INVALID_EVENT -7
-#define DEC_ERROR_NO_MORE_DATA -8
-#define DEC_ERROR_INVALID_FILE -9
+#define DEC_ERROR_HUGE_EVENT -7
+#define DEC_ERROR_INVALID_EVENT -8
+#define DEC_ERROR_NO_MORE_DATA -9
+#define DEC_ERROR_INVALID_FILE -10
 
 
 // Sensor properties:
@@ -60,8 +61,21 @@ namespace CMSPixel {
     int roc;
     int col;
     int row;
-    int raw;        
-  } event;
+    int raw;
+    int vcal;
+  } pixel;
+
+  typedef struct {
+    std::vector <pixel> vpix;
+    int roc;
+    int size;
+    //    int sumA;//DP
+    float charge;
+    float col,row;
+    //int layer;
+    double xy[2]; // local coordinates
+    //double xyz[3];
+  } cluster;
 
   // Struct for Decoder levels
   typedef struct {
@@ -81,6 +95,8 @@ namespace CMSPixel {
     void update(CMSPixelStatistics stats);
     void print();
     std::string get();
+    // Raw data blocks:
+    uint32_t data_blocks;
     // Number of detected testboard data markers
     uint32_t head_data;
     // Number of detected testboard trigger markers
@@ -120,7 +136,7 @@ namespace CMSPixel {
   public:
     CMSPixelEventDecoder(unsigned int rocs, int flags, uint8_t ROCTYPE);
     ~CMSPixelEventDecoder();
-    int get_event(std::vector< int16_t > data, std::vector<event> * evt);
+    int get_event(std::vector< int16_t > data, std::vector<pixel> * evt);
     CMSPixelStatistics statistics;
 
   protected:
@@ -137,11 +153,11 @@ namespace CMSPixel {
     virtual bool find_roc_header(std::vector< int16_t > data, unsigned int * pos, unsigned int roc) = 0;
     virtual bool find_tbm_header(std::vector< int16_t > data, unsigned int pos) = 0;
     virtual bool find_tbm_trailer(std::vector< int16_t > data, unsigned int pos) = 0;
-    virtual int decode_hit(std::vector< int16_t > data, unsigned int * pos, unsigned int roc, event * hit) = 0;
+    virtual int decode_hit(std::vector< int16_t > data, unsigned int * pos, unsigned int roc, pixel * hit) = 0;
             
     // These functions are the same no matter what data format we have:
     int pre_check_sanity(std::vector< int16_t > * data, unsigned int * pos);
-    int post_check_sanity(std::vector< event > * evt, unsigned int rocs);
+    int post_check_sanity(std::vector< pixel > * evt, unsigned int rocs);
 
   };
 
@@ -173,7 +189,7 @@ namespace CMSPixel {
     bool find_roc_header(std::vector< int16_t > data, unsigned int * pos, unsigned int roc);
     bool find_tbm_header(std::vector< int16_t > adc, unsigned int pos);    
     bool find_tbm_trailer(std::vector< int16_t > adc, unsigned int pos);
-    int decode_hit(std::vector< int16_t > data, unsigned int * pos, unsigned int roc, event * hit);
+    int decode_hit(std::vector< int16_t > data, unsigned int * pos, unsigned int roc, pixel * hit);
 
   private:
     int findBin(int adc, int nlevel, std::vector< int > level);
@@ -216,7 +232,7 @@ namespace CMSPixel {
     bool find_roc_header(std::vector< int16_t > data, unsigned int * pos, unsigned int roc);
     bool find_tbm_header(std::vector< int16_t > adc, unsigned int pos);
     bool find_tbm_trailer(std::vector< int16_t > adc, unsigned int pos);
-    int decode_hit(std::vector< int16_t > data, unsigned int * pos, unsigned int roc, event * hit);
+    int decode_hit(std::vector< int16_t > data, unsigned int * pos, unsigned int roc, pixel * hit);
 
   private:
     int get_bit(std::vector< int16_t > data, int bit_offset);
@@ -236,7 +252,7 @@ namespace CMSPixel {
   public:
     CMSPixelFileDecoder(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile);
     ~CMSPixelFileDecoder();
-    int get_event(std::vector<event> * decevt, int64_t & timestamp);
+    int get_event(std::vector<pixel> * decevt, int64_t & timestamp);
 
     virtual bool word_is_data(unsigned short word) = 0;
     virtual bool word_is_trigger(unsigned short word) = 0;
@@ -297,7 +313,7 @@ class CMSPixelFileDecoderPSI_ATB : public CMSPixelFileDecoder {
       else return false;
     };
     inline bool word_is_trigger(unsigned short word) {
-      if(word == 0x8004) return true;
+      if(word == 0x8004 || word == 0x8002) return true;
       else return false;
     };
     inline bool word_is_header(unsigned short word) {
