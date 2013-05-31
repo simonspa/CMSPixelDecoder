@@ -388,6 +388,8 @@ int CMSPixelEventDecoder::get_event(std::vector< int16_t > data, std::vector<pix
 
   LOG(logDEBUG) << "Start decoding.";
   LOG(logDEBUG1) << "Received " << 16*data.size() << " bits of event data.";
+  statistics.data_blocks = data.size();
+
   evt->clear();
   statistics.init();
 
