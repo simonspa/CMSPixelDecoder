@@ -87,6 +87,12 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< int16_t > * rawdata) {
   // Byte c: Timestamp (lower 8b)
   // Byte d: Bits 1-0 are phase of the trigger pulse; bits 3-2 are phase of the received data
 
+  // Check if we have enough data to process the event:
+  if(rawdata->size() < 5) {
+    LOG(logERROR) << "IPBus event not complete.";
+    return false;
+  }
+
   // We need to swap the endianness since the data block comes in scrumbled 8bit-blocks:
   // D | C | B | A  ->  A | B | C | D
   uint32_t event_length = (((rawdata->at(1)<<24)&0xff000000) | 
@@ -95,11 +101,11 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< int16_t > * rawdata) {
 			   ((rawdata->at(0)>>8)&0xff)) - 14;
   
   // Check for stupid event sizes:
-  if(event_length/2 > rawdata->size()) {
+  if(event_length/2 > rawdata->size() || event_length/2 < 4) {
     LOG(logERROR) << "IPBus event length implausible: " << event_length << " bytes.";
     return false;
   }
-  else 
+  else
     LOG(logDEBUG4) << "IPBus event length: " << event_length << " bytes.";
   
   // Read the timestamp from the trailer:
