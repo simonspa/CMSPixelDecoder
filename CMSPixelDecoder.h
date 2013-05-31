@@ -143,7 +143,8 @@ namespace CMSPixel {
     bool convertDcolToCol(int dcol, int pix, int & col, int & row);
 
     unsigned int L_HEADER, L_TRAILER, L_EMPTYEVT, L_GRANULARITY, L_HIT, L_ROC_HEADER, L_HUGE_EVENT;
-    int flag, noOfROC;
+    int flag;
+    unsigned int noOfROC;
     uint8_t theROC;
 
   private:
