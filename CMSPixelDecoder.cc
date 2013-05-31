@@ -87,11 +87,8 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< int16_t > * rawdata) {
   // Byte c: Timestamp (lower 8b)
   // Byte d: Bits 1-0 are phase of the trigger pulse; bits 3-2 are phase of the received data
 
-  // Check if we have enough data to process the event:
-  if(rawdata->size() < 5) {
-    LOG(logERROR) << "IPBus event not complete.";
-    return false;
-  }
+  // Catch strange events with corrupted length or so:
+  try {
 
   // We need to swap the endianness since the data block comes in scrumbled 8bit-blocks:
   // D | C | B | A  ->  A | B | C | D
@@ -100,13 +97,7 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< int16_t > * rawdata) {
 			   ((rawdata->at(0)<<8)&0xff00) | 
 			   ((rawdata->at(0)>>8)&0xff)) - 14;
   
-  // Check for stupid event sizes:
-  if(event_length/2 > rawdata->size() || event_length/2 < 4) {
-    LOG(logERROR) << "IPBus event length implausible: " << event_length << " bytes.";
-    return false;
-  }
-  else
-    LOG(logDEBUG4) << "IPBus event length: " << event_length << " bytes.";
+  LOG(logDEBUG4) << "IPBus event length: " << event_length << " bytes.";
   
   // Read the timestamp from the trailer:
   int16_t stamp_pos = event_length/2+8;
@@ -131,7 +122,12 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< int16_t > * rawdata) {
   rawdata->erase(rawdata->begin(),rawdata->begin()+4);
   //  and last 14 bytes plus the padding from trailer:
   rawdata->erase(rawdata->begin() + (event_length/2 + event_length%2),rawdata->end());
-            
+
+  }
+  catch(...) {
+    LOG(logERROR) << "Invalid IPBus event detected.";
+    return false;
+  }
   return true;
 }
 
@@ -178,7 +174,7 @@ int CMSPixelFileDecoder::get_event(std::vector<pixel> * decevt, int64_t & timest
   if(!chop_datastream(&data)) return DEC_ERROR_NO_MORE_DATA;
 
   // Take into account that different testboards write the data differently:
-  if(!process_rawdata(&data)) return DEC_ERROR_NO_MORE_DATA;
+  if(!process_rawdata(&data)) return DEC_ERROR_INVALID_EVENT;
 
   // Deliver the timestamp:
   timestamp = cmstime;
@@ -258,11 +254,11 @@ bool CMSPixelFileDecoder::chop_datastream(std::vector< int16_t > * rawdata) {
 
   //FIXME For IPBus readout check the next header words, too - they should be header again:
   if(!readWord(word)) return false;
-  if(!word_is_2nd_header(word)) {
-    rawdata->push_back(word);
-    goto morewords;
-  }
-  else LOG(logDEBUG4) << "Double-checked header, was " << std::hex << word << std::dec;
+  //  if(!word_is_2nd_header(word)) {
+  //  rawdata->push_back(word);
+  //  goto morewords;
+  // }
+  //else LOG(logDEBUG4) << "Double-checked header, was " << std::hex << word << std::dec;
   
   LOG(logDEBUG1) << "Raw data array size: " << rawdata->size() << ", so " << 16*rawdata->size() << " bits.";
     

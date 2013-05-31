@@ -14,7 +14,7 @@ int main(int argc, char* argv[]) {
   Log::ReportingLevel() = Log::FromString(argv[1] ? argv[1] : "SUMMARY");
 
   CMSPixelStatistics global_statistics;
-  std::vector<event> * evt = new std::vector<event>;
+  std::vector<pixel> * evt = new std::vector<pixel>;
   long int timestamp = 0;
 
   int events = atoi(argv[2]);
@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
 
     for(int j = 0; j < events; ++j)
       if(decoder->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
-      
+
     global_statistics.update(decoder->statistics);
     decoder->statistics.print();
     delete decoder;

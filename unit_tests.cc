@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
   std::cout << "Now running singe call tests...\n";
   Log::ReportingLevel() = Log::FromString("INFO");
 
-  std::vector<event> * singleevt = new std::vector<event>;
+  std::vector<pixel> * singleevt = new std::vector<pixel>;
   std::vector<int16_t> singledat;
   CMSPixelEventDecoder * singledec;
 
@@ -36,7 +36,7 @@ int main(int argc, char* argv[]) {
   singledat.push_back(0x7f87);
   singledat.push_back(0xf84b);
 
-  flaggen = FLAG_16BITS_PER_WORD | FLAG_ALLOW_CORRUPT_ROC_HEADERS;
+  int flaggen = FLAG_16BITS_PER_WORD | FLAG_ALLOW_CORRUPT_ROC_HEADERS;
   singledec = new CMSPixelEventDecoderDigital(8,flaggen,ROC_PSI46DIG);
   std::cout << "Return: " << singledec->get_event(singledat,singleevt) << std::endl;
   delete singledec;
@@ -129,7 +129,7 @@ bool test_analog_single()
   ref.pixels_invalid = 8718; //11586;
   double ref_timing = 0.26;
 
-  std::vector<event> * evt = new std::vector<event>;
+  std::vector<pixel> * evt = new std::vector<pixel>;
   long int timestamp;
   CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB("mtb.bin.ana",1,FLAG_ALLOW_CORRUPT_ROC_HEADERS,ROC_PSI46V2,"addressParameters.dat.single");
 
@@ -154,6 +154,7 @@ bool test_analog_single()
   }
   else {
     delete dec;
+    std::cout << "SUCCEEDED." << std::endl;
     return true;
   }
 }
@@ -172,7 +173,7 @@ bool test_digital_single()
   ref.pixels_invalid = 2368;
   double ref_timing = 1.69;
 
-  std::vector<event> * evt = new std::vector<event>;
+  std::vector<pixel> * evt = new std::vector<pixel>;
   long int timestamp;
   CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB("mtb.bin.dig",1,FLAG_ALLOW_CORRUPT_ROC_HEADERS,ROC_PSI46DIG,"");
 
@@ -197,6 +198,7 @@ bool test_digital_single()
   }
   else {
     delete dec;
+    std::cout << "SUCCEEDED." << std::endl;
     return true;
   }
 }
@@ -215,7 +217,7 @@ bool test_analog_module()
   ref.pixels_invalid = 0;
   double ref_timing = 3.76;
 
-  std::vector<event> * evt = new std::vector<event>;
+  std::vector<pixel> * evt = new std::vector<pixel>;
   long int timestamp;
   CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB("mtb.bin.mod.ana",16,FLAG_HAVETBM,ROC_PSI46V2,"addressParameters.dat.mod");
 
@@ -240,6 +242,7 @@ bool test_analog_module()
   }
   else {
     delete dec;
+    std::cout << "SUCCEEDED." << std::endl;
     return true;
   }
 }
@@ -259,7 +262,7 @@ bool test_telescope_psi()
   ref.pixels_invalid = 69444;
   double ref_timing = 7.3;
 
-  std::vector<event> * evt = new std::vector<event>;
+  std::vector<pixel> * evt = new std::vector<pixel>;
   long int timestamp;
   CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB("mtb.bin.tel.psi",8,FLAG_ALLOW_CORRUPT_ROC_HEADERS,ROC_PSI46DIG,"");
 
@@ -285,6 +288,7 @@ bool test_telescope_psi()
   }
   else {
     delete dec;
+    std::cout << "SUCCEEDED." << std::endl;
     return true;
   }
 }
@@ -296,15 +300,15 @@ bool test_telescope_ral()
   // REFERENCE:
   CMSPixelStatistics ref;
   ref.head_trigger = 0;
-  ref.head_data = 27328;
-  ref.evt_empty = 9705;
-  ref.evt_valid = 9660;
-  ref.pixels_valid = 428704;
-  ref.evt_invalid = 7962;
-  ref.pixels_invalid = 116826;
-  double ref_timing = 1.78;
+  ref.head_data = 354253;
+  ref.evt_empty = 51256;
+  ref.evt_valid = 202117;
+  ref.pixels_valid = 8328585;
+  ref.evt_invalid = 100872;
+  ref.pixels_invalid = 1397125;
+  double ref_timing = 99.7;
 
-  std::vector<event> * evt = new std::vector<event>;
+  std::vector<pixel> * evt = new std::vector<pixel>;
   long int timestamp;
   CMSPixelFileDecoder * dec = new CMSPixelFileDecoderRAL("mtb.bin.tel.ral",8,FLAG_ALLOW_CORRUPT_ROC_HEADERS,ROC_PSI46DIG);
 
@@ -330,6 +334,7 @@ bool test_telescope_ral()
   }
   else {
     delete dec;
+    std::cout << "SUCCEEDED." << std::endl;
     return true;
   }
 }
