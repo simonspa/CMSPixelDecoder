@@ -218,13 +218,14 @@ bool CMSPixelFileDecoder::chop_datastream(std::vector< int16_t > * rawdata) {
       statistics.head_trigger++;
 
       // read 3 more words after header:
-      int16_t head[4];
+      uint16_t head[4];
       for(int h = 1; h < 4; h++ ) {
 	if(!readWord(word)) return false;
 	head[h] = word;
       }
+      LOG(logDEBUG4) << "Headers: " << head[1] << " " << head[2] << " " << head[3];
       // Calculating the tigger time of the event:
-      cmstime = ( static_cast< long >(head[1]) << 32 ) + static_cast< long >((head[2] << 16) | head[3]);
+      cmstime = (((uint64_t)head[1]<<32)&0xffff00000000) | (((uint64_t)head[2]<<16)&0xffff0000) | (head[3]&0xffff);
       LOG(logDEBUG1) << "Timestamp: " << cmstime;
     }
     else if(word_is_header(word) ) {
@@ -245,7 +246,7 @@ bool CMSPixelFileDecoder::chop_datastream(std::vector< int16_t > * rawdata) {
   for(int i = 1; i < 4; i++) if(!readWord(word)) return false;
             
   // read the data until the next MTB header arises:
- morewords:
+  // morewords:
   if(!readWord(word)) return false;
   while( !word_is_header(word) && !feof(mtbStream)){
     rawdata->push_back(word);

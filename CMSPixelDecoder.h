@@ -65,18 +65,6 @@ namespace CMSPixel {
     int vcal;
   } pixel;
 
-  typedef struct {
-    std::vector <pixel> vpix;
-    int roc;
-    int size;
-    //    int sumA;//DP
-    float charge;
-    float col,row;
-    //int layer;
-    double xy[2]; // local coordinates
-    //double xyz[3];
-  } cluster;
-
   // Struct for Decoder levels
   typedef struct {
     std::vector< int > level;
