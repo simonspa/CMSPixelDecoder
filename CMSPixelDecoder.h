@@ -62,7 +62,7 @@ namespace CMSPixel {
     int col;
     int row;
     int raw;
-    int vcal;
+    double vcal;
   } pixel;
 
   // Struct for Decoder levels
