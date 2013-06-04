@@ -209,3 +209,44 @@
 
   Be aware of the fact that enabled logging slows down the encoding by quite a
   bit. So only turn it on if you need it!
+
+* Utilities in the repository
+** d2h - data2histograms
+
+
+** unit_tests - Testing changes in the Decoder
+   This small tool performs some tests for decoding data from various sources
+   (covering most of the configuration possibilities) and compares the obtained
+   statistics again some hardcoded values. An error is issued if any of the
+   numbers do not meet the expectations.
+
+   $ ./unit_tests
+
+   This helps to find quirks and bugs introduced in the latest version. Just
+   run this test before commiting changes.
+
+   Some timing measurements are done but they are not really reliable (yet).
+  
+** tentative_dec - command line program to decode files
+   A small tool to quickly decode some events of a given file. Invoke with:
+
+   $ ./tentative_dec LEVEL NUMEVT File[s...]
+
+   where LEVEL is the desired decoder verbosity level (see above), NUMEVT is
+   the number of events to decode from every file, and File[s...] are any
+   number of data files. Check the correct decoding settings in the source code!
+
+** stat_tool - collects statistics
+   This tool just runs through a number of files, decodes them and collects
+   their statistics, adds them up and prints them finally. Useful to run
+   over a large set of files. Usage:
+
+   $ ./stat_tool LEVEL File[s...]
+
+   where LEVEL is the desired verbosity level and File[s...] are any number
+   of data files. Check the correct decoding settings in the source code!
+
+** mc_background - simulation for random bit error estimates
+   This tool generates random numbers as hit patterns, preceeded by a valid ROC
+   header. This can be used to estimate the number of fake hits from randomly
+   distributed bit errors in the readout.
