@@ -52,7 +52,8 @@ int main( int argc, char **argv )
 
   int chip = 8; // default chip
   string gainFileName;
-
+  bool gain_set = false;
+  
   string fileName;
   string histoName;
 
@@ -92,6 +93,7 @@ int main( int argc, char **argv )
     // Specify gain file
     else if( !strcmp( argv[i], "-g" ) ) {
       gainFileName = argv[++i];
+      gain_set = true;
     }
 
     // Set debug level
@@ -134,45 +136,46 @@ int main( int argc, char **argv )
   bool weib = 0;
   double keV = 0.450; // large Vcal -> keV
 
-  if(      chip ==  6 ) gainFileName = "/home/pitzl/psi/slc5/psi46expert/chip6/gaintanh_C6.dat";
-  else if( chip ==  7 ) gainFileName = "/home/pitzl/psi/slc5/psi46expert/chip7/gaintanh_C7_tbm.dat";
-  else if( chip == 10 )
-    gainFileName = "/home/pitzl/psi/slc5/psi46expert/chip10-tb/gaintanh-chip10-ia24-board9-bias150.dat"; // Jun 2012
-  else if( chip == 11 )
-    gainFileName = "/home/pitzl/psi/slc5/psi46expert/chip11/gaintanh-chip11-board9-tbm-Jun.dat";
-  else if( chip == 14 ) gainFileName = "/home/pitzl/psi/slc5/psi46expert/chip14/gaintanh.dat";
-  else if( chip == 8 ) gainFileName = "gaintanh_C8.dat";
-  else if( chip == 102 ) {
-    gainFileName = "/home/pitzl/psi/slc5/psi46expert/xdb2/gainweib-xdb2-ia35c-trim30-bias150-Friday.dat";
-    weib = 1;
+  if(!gain_set) {
+    if(      chip ==  6 ) gainFileName = "/home/pitzl/psi/slc5/psi46expert/chip6/gaintanh_C6.dat";
+    else if( chip ==  7 ) gainFileName = "/home/pitzl/psi/slc5/psi46expert/chip7/gaintanh_C7_tbm.dat";
+    else if( chip == 10 )
+      gainFileName = "/home/pitzl/psi/slc5/psi46expert/chip10-tb/gaintanh-chip10-ia24-board9-bias150.dat"; // Jun 2012
+    else if( chip == 11 )
+      gainFileName = "/home/pitzl/psi/slc5/psi46expert/chip11/gaintanh-chip11-board9-tbm-Jun.dat";
+    else if( chip == 14 ) gainFileName = "/home/pitzl/psi/slc5/psi46expert/chip14/gaintanh.dat";
+    else if( chip == 8 ) gainFileName = "gaintanh_C8.dat";
+    else if( chip == 102 ) {
+      gainFileName = "/home/pitzl/psi/slc5/psi46expert/xdb2/gainweib-xdb2-ia35c-trim30-bias150-Friday.dat";
+      weib = 1;
+    }
+    else if( chip == 202 ){ // digital
+      gainFileName = "/home/pitzl/psi/digi/chip202/gainweib-Ia40-Vdig14-trim18.dat"; // lab
+      weib = 1;
+    }
+    else if( chip == 203 ) { // digital
+      gainFileName = "/home/pitzl/psi/digi/chip203/gaindigi-chip203-Ia30-Vdig14-trim35.dat";
+      weib = 1;
+    }
+    else if( chip == 204 ) { // digital
+      gainFileName = "/home/pitzl/psi/digi/chip204/gaindigi.dat";
+      weib = 1;
+    }
+    else if( chip == 205 ) { // digital
+      gainFileName = "gaindigi-Vdig15-Ia25-trim28-Mar4.dat";
+      weib = 1;
+    }
+    else if( chip == 39 ) { // digital
+      gainFileName = "/home/pitzl/psi/digi/chip39/gaindigi-Ia25-Vdig12-trim2424.dat";
+      weib = 1;
+    }
+    else if( chip == 47 ) { // digital
+      gainFileName = "/home/pitzl/psi/digi/chip47-Vdig15/gaindigi-Vdig15-Ia25-trim30.dat";
+      weib = 1;
+    }
+    else
+      gainFileName = "gaintanh.dat";
   }
-  else if( chip == 202 ){ // digital
-    gainFileName = "/home/pitzl/psi/digi/chip202/gainweib-Ia40-Vdig14-trim18.dat"; // lab
-    weib = 1;
-  }
-  else if( chip == 203 ) { // digital
-    gainFileName = "/home/pitzl/psi/digi/chip203/gaindigi-chip203-Ia30-Vdig14-trim35.dat";
-    weib = 1;
-  }
-  else if( chip == 204 ) { // digital
-    gainFileName = "/home/pitzl/psi/digi/chip204/gaindigi.dat";
-    weib = 1;
-  }
-  else if( chip == 205 ) { // digital
-    gainFileName = "gaindigi-Vdig15-Ia25-trim28-Mar4.dat";
-    weib = 1;
-  }
-  else if( chip == 39 ) { // digital
-    gainFileName = "/home/pitzl/psi/digi/chip39/gaindigi-Ia25-Vdig12-trim2424.dat";
-    weib = 1;
-  }
-  else if( chip == 47 ) { // digital
-    gainFileName = "/home/pitzl/psi/digi/chip47-Vdig15/gaindigi-Vdig15-Ia25-trim30.dat";
-    weib = 1;
-  }
-  else
-    gainFileName = "gaintanh.dat";
-
 
   ifstream gainFile( gainFileName.c_str() );
 
