@@ -58,6 +58,7 @@ void CMSPixelStatistics::print() {
 bool CMSPixelFileDecoderPSI_ATB::process_rawdata(std::vector< int16_t > * data)
 {
   // Currently nothing to do here...
+  (void)data;
   LOG(logDEBUG4) << "No need for raw data processing with PSI ATB.";
   return true;
 }
@@ -65,6 +66,7 @@ bool CMSPixelFileDecoderPSI_ATB::process_rawdata(std::vector< int16_t > * data)
 bool CMSPixelFileDecoderPSI_DTB::process_rawdata(std::vector< int16_t > * data) 
 {
   // Currently nothing to do here...
+  (void)data;
   LOG(logDEBUG4) << "No need for raw data processing with PSI DTB.";
   return true;
 }

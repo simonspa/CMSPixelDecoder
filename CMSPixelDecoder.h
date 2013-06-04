@@ -123,7 +123,7 @@ namespace CMSPixel {
   class CMSPixelEventDecoder {
   public:
     CMSPixelEventDecoder(unsigned int rocs, int flags, uint8_t ROCTYPE);
-    ~CMSPixelEventDecoder();
+    virtual ~CMSPixelEventDecoder();
     int get_event(std::vector< int16_t > data, std::vector<pixel> * evt);
     CMSPixelStatistics statistics;
 
@@ -163,6 +163,8 @@ namespace CMSPixel {
 
   protected:
     inline void load_constants(int flags) {
+      // Silence unised variable warning
+      (void)flags;
       // Lenth of different tokens:
       // Analog: all values given in data words (16bit)
       L_ROC_HEADER = 3;   // ROC header
@@ -240,7 +242,8 @@ namespace CMSPixel {
   class CMSPixelFileDecoder {
   public:
     CMSPixelFileDecoder(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile);
-    ~CMSPixelFileDecoder();
+    virtual ~CMSPixelFileDecoder();
+
     int get_event(std::vector<pixel> * decevt, int64_t & timestamp);
 
     virtual bool word_is_data(unsigned short word) = 0;
@@ -268,6 +271,7 @@ namespace CMSPixel {
   class CMSPixelFileDecoderRAL : public CMSPixelFileDecoder {
   public:
   CMSPixelFileDecoderRAL(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE) : CMSPixelFileDecoder(FileName, rocs, addflags(flags), ROCTYPE, "") {};
+    ~CMSPixelFileDecoderRAL() {};
   private:
     inline int addflags(int flags) {
       return (flags | FLAG_16BITS_PER_WORD);
@@ -279,6 +283,8 @@ namespace CMSPixel {
       else return false;
     };
     inline bool word_is_trigger(unsigned short word) {
+      // IPBus format doesn't know about trigger headers.
+      (void)word;
       return false;
     };
     inline bool word_is_header(unsigned short word) {
@@ -296,6 +302,7 @@ namespace CMSPixel {
 class CMSPixelFileDecoderPSI_ATB : public CMSPixelFileDecoder {
   public:
   CMSPixelFileDecoderPSI_ATB(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile) : CMSPixelFileDecoder(FileName, rocs, flags, ROCTYPE, addressFile) {};
+    ~CMSPixelFileDecoderPSI_ATB() {};
   private:
     inline bool word_is_data(unsigned short word) {
       if(word == 0x8001 || word == 0x8081 || word == 0x8005) return true;
@@ -311,6 +318,7 @@ class CMSPixelFileDecoderPSI_ATB : public CMSPixelFileDecoder {
     };
     inline bool word_is_2nd_header(unsigned short word) {
       // PSI ATB features 16bit headers only.
+      (void)word;
       return true;
     };
     bool process_rawdata(std::vector< int16_t > * rawdata);
@@ -319,6 +327,7 @@ class CMSPixelFileDecoderPSI_ATB : public CMSPixelFileDecoder {
 class CMSPixelFileDecoderPSI_DTB : public CMSPixelFileDecoder {
   public:
   CMSPixelFileDecoderPSI_DTB(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile) : CMSPixelFileDecoder(FileName, rocs, flags, ROCTYPE, addressFile) {};
+    ~CMSPixelFileDecoderPSI_DTB() {};
   private:
     inline bool word_is_data(unsigned short word) {
       if(word == 0x8501 || word == 0x8581 || word == 0x8505) return true;
@@ -334,6 +343,7 @@ class CMSPixelFileDecoderPSI_DTB : public CMSPixelFileDecoder {
     };
     inline bool word_is_2nd_header(unsigned short word) {
       // PSI DTB features 16bit headers only.
+      (void)word;
       return true;
     };
     bool process_rawdata(std::vector< int16_t > * rawdata);
@@ -371,7 +381,7 @@ class CMSPixelFileDecoderPSI_DTB : public CMSPixelFileDecoder {
     char buffer[11];
     time_t t;
     time(&t);
-    tm r = {0};
+    tm r = * localtime(&t);//{0};
     strftime(buffer, sizeof(buffer), "%X", localtime_r(&t, &r));
     struct timeval tv;
     gettimeofday(&tv, 0);

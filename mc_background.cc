@@ -13,6 +13,7 @@ using namespace CMSPixel;
 
 int main(int argc, char* argv[]) {
 
+  (void)argc;
   Log::ReportingLevel() = Log::FromString(argv[1] ? argv[1] : "SUMMARY");
   uint32_t ihit;
   uint32_t failed = 0;
@@ -20,7 +21,7 @@ int main(int argc, char* argv[]) {
   uint32_t samples;
 
   std::vector<int16_t> data;
-  std::vector<event> * evt = new std::vector<event>;
+  std::vector<pixel> * evt = new std::vector<pixel>;
 
   CMSPixelEventDecoder * evtdec = new CMSPixelEventDecoderDigital(1,FLAG_16BITS_PER_WORD | FLAG_ALLOW_CORRUPT_ROC_HEADERS,ROC_PSI46DIG);
 

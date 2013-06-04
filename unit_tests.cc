@@ -14,6 +14,7 @@ bool unit_tests();
 
 int main(int argc, char* argv[]) {
 
+  (void)argc;
   Log::ReportingLevel() = Log::FromString(argv[1] ? argv[1] : "DEBUG1");
 
   // ###################################################################################
