@@ -34,7 +34,7 @@ void CMSPixelStatistics::update(CMSPixelStatistics stats) {
   evt_invalid += stats.evt_invalid;
   pixels_valid += stats.pixels_valid;
   pixels_invalid += stats.pixels_invalid;
-};
+}
 
 std::string CMSPixelStatistics::get() {
   // FIXME print statistics into string here...
@@ -104,14 +104,14 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< int16_t > * rawdata) {
   // Read the timestamp from the trailer:
   int16_t stamp_pos = event_length/2+8;
   if(event_length%2 == 0) {
-    cmstime = (((uint64_t)rawdata->at(stamp_pos+1)<<32)&0xff00000000) | 
+    cmstime = ((static_cast<uint64_t>(rawdata->at(stamp_pos+1))<<32)&0xff00000000) | 
       ((rawdata->at(stamp_pos+1)<<16)&0xff000000) | 
       ((rawdata->at(stamp_pos)<<16)&0xff0000) | 
       ((rawdata->at(stamp_pos))&0xff00) | 
       ((rawdata->at(stamp_pos+2)>>8)&0xff);
   }
   else {
-    cmstime = (((uint64_t)rawdata->at(stamp_pos+2)<<24)&0xff00000000) | 
+    cmstime = ((static_cast<uint64_t>(rawdata->at(stamp_pos+2))<<24)&0xff00000000) | 
       ((rawdata->at(stamp_pos+1)<<24)&0xff000000) | 
       ((rawdata->at(stamp_pos+1)<<8)&0xff0000) | 
       ((rawdata->at(stamp_pos)<<8)&0xff00) | 
@@ -134,6 +134,7 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< int16_t > * rawdata) {
 }
 
 CMSPixelFileDecoder::CMSPixelFileDecoder(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile)
+  : statistics(), evt(), theROC(0), mtbStream(), cmstime(0), addressLevels()
 {
   // Make the roc type available:
   theROC = ROCTYPE;
@@ -227,7 +228,7 @@ bool CMSPixelFileDecoder::chop_datastream(std::vector< int16_t > * rawdata) {
       }
       LOG(logDEBUG4) << "Headers: " << head[1] << " " << head[2] << " " << head[3];
       // Calculating the tigger time of the event:
-      cmstime = (((uint64_t)head[1]<<32)&0xffff00000000) | (((uint64_t)head[2]<<16)&0xffff0000) | (head[3]&0xffff);
+      cmstime = ((static_cast<uint64_t>(head[1])<<32)&0xffff00000000) | ((static_cast<uint64_t>(head[2])<<16)&0xffff0000) | (head[3]&0xffff);
       LOG(logDEBUG1) << "Timestamp: " << cmstime;
     }
     else if(word_is_header(word) ) {
@@ -377,7 +378,9 @@ std::string CMSPixelFileDecoder::print_addresslevels(levelset addLevels) {
 /*========================================================================*/
 
 
-CMSPixelEventDecoder::CMSPixelEventDecoder(unsigned int rocs, int flags, uint8_t ROCTYPE) {
+CMSPixelEventDecoder::CMSPixelEventDecoder(unsigned int rocs, int flags, uint8_t ROCTYPE)
+  : statistics(), L_HEADER(0), L_TRAILER(0), L_EMPTYEVT(0), L_GRANULARITY(0), L_HIT(0), L_ROC_HEADER(0), L_HUGE_EVENT(0), flag(0), noOfROC(0), theROC(0)
+{
 
   flag = flags;
   noOfROC = rocs;
@@ -717,7 +720,7 @@ int CMSPixelEventDecoderDigital::decode_hit(std::vector< int16_t > data, unsigne
 /*          decoding ANALOG chip data                                     */
 /*========================================================================*/
 
-CMSPixelEventDecoderAnalog::CMSPixelEventDecoderAnalog(unsigned int rocs, int flags, uint8_t ROCTYPE, levelset addLevels) : CMSPixelEventDecoder(rocs, flags, ROCTYPE)
+CMSPixelEventDecoderAnalog::CMSPixelEventDecoderAnalog(unsigned int rocs, int flags, uint8_t ROCTYPE, levelset addLevels) : CMSPixelEventDecoder(rocs, flags, ROCTYPE), addressLevels()
 {
   LOG(logDEBUG) << "Preparing an analog decoder instance...";
   // Loading constants:

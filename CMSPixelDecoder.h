@@ -78,7 +78,15 @@ namespace CMSPixel {
 
   class CMSPixelStatistics {
   public:
-    CMSPixelStatistics() { init(); };
+    CMSPixelStatistics() :
+    data_blocks(0),
+      head_data(0),
+      head_trigger(0),
+      evt_valid(0),
+      evt_empty(0),
+      evt_invalid(0),
+      pixels_valid(0),
+      pixels_invalid(0)	{ init(); };
     void init();
     void update(CMSPixelStatistics stats);
     void print();
@@ -372,7 +380,7 @@ class CMSPixelFileDecoderPSI_DTB : public CMSPixelFileDecoder {
     std::string NowTime();
   };
 
-  inline Log::Log()
+  inline Log::Log() : os()
   {
   }
 
@@ -386,7 +394,7 @@ class CMSPixelFileDecoderPSI_DTB : public CMSPixelFileDecoder {
     struct timeval tv;
     gettimeofday(&tv, 0);
     char result[100] = {0};
-    std::sprintf(result, "%s.%03ld", buffer, (long)tv.tv_usec / 1000); 
+    std::sprintf(result, "%s.%03ld", buffer, static_cast<long>(tv.tv_usec) / 1000); 
     return result;
   }
 
