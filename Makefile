@@ -3,9 +3,9 @@
 
 CC = g++
 
-CFLAGS  = -Wall -Wextra -g -Wno-deprecated 
+CFLAGS  = -Wall -Wextra -g -Wno-deprecated -ansi -pedantic -Wno-long-long
 LDFLAGS = -lSpectrum
-SOFLAGS = -shared -g
+SOFLAGS = -shared
 
 ROOTCFLAGS    = $(shell $(ROOTSYS)/bin/root-config --cflags)
 ROOTLIBS      = $(shell $(ROOTSYS)/bin/root-config --libs)
