@@ -7,6 +7,7 @@
 #include <iostream>
 #include <time.h>
 #include <limits>
+#include <inttypes.h>
 
 using namespace std;
 using namespace CMSPixel;
@@ -20,7 +21,7 @@ int main(int argc, char* argv[]) {
   uint32_t valid = 0;
   uint32_t samples;
 
-  std::vector<int16_t> data;
+  std::vector<uint16_t> data;
   std::vector<pixel> * evt = new std::vector<pixel>;
 
   CMSPixelEventDecoder * evtdec = new CMSPixelEventDecoderDigital(1,FLAG_16BITS_PER_WORD | FLAG_ALLOW_CORRUPT_ROC_HEADERS,ROC_PSI46DIG);

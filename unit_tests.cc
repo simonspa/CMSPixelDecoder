@@ -11,6 +11,7 @@ using namespace std;
 using namespace CMSPixel;
 
 bool unit_tests();
+bool read_address_levels(const char* levelsFile, unsigned int rocs, levelset & addressLevels);
 
 int main(int argc, char* argv[]) {
 
@@ -20,11 +21,35 @@ int main(int argc, char* argv[]) {
   // ###################################################################################
 
   std::cout << "Now running singe call tests...\n";
-  Log::ReportingLevel() = Log::FromString("INFO");
+  Log::ReportingLevel() = Log::FromString("DEBUG4");
 
   std::vector<pixel> * singleevt = new std::vector<pixel>;
-  std::vector<int16_t> singledat;
+  std::vector<uint16_t> singledat;
   CMSPixelEventDecoder * singledec;
+
+
+  std::cout << "PSI46 Analog:\n";
+
+  levelset addressLevels;
+  read_address_levels("addressParameters.dat",1,addressLevels);
+
+  singledat.push_back(0x0d12);
+  singledat.push_back(0x0000);
+  singledat.push_back(0x1234);
+
+  singledat.push_back(0x40ba);
+  singledat.push_back(0x0f44);
+  singledat.push_back(0x0c68);
+  singledat.push_back(0x002c);
+  singledat.push_back(0x0250);
+  singledat.push_back(0x0014);
+
+  int flaggen = FLAG_ALLOW_CORRUPT_ROC_HEADERS;
+  singledec = new CMSPixelEventDecoderAnalog(1,flaggen,ROC_PSI46V2,addressLevels);
+  std::cout << "Return: " << singledec->get_event(singledat,singleevt) << std::endl;
+  delete singledec;
+  singledat.clear();
+
 
   std::cout << "RAL IPBus:\n";
   // Trying IPBus:
@@ -37,7 +62,7 @@ int main(int argc, char* argv[]) {
   singledat.push_back(0x7f87);
   singledat.push_back(0xf84b);
 
-  int flaggen = FLAG_16BITS_PER_WORD | FLAG_ALLOW_CORRUPT_ROC_HEADERS;
+  flaggen = FLAG_16BITS_PER_WORD | FLAG_ALLOW_CORRUPT_ROC_HEADERS;
   singledec = new CMSPixelEventDecoderDigital(8,flaggen,ROC_PSI46DIG);
   std::cout << "Return: " << singledec->get_event(singledat,singleevt) << std::endl;
   delete singledec;
@@ -131,8 +156,8 @@ bool test_analog_single()
   double ref_timing = 0.26;
 
   std::vector<pixel> * evt = new std::vector<pixel>;
-  long int timestamp;
-  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB("mtb.bin.ana",1,FLAG_ALLOW_CORRUPT_ROC_HEADERS,ROC_PSI46V2,"addressParameters.dat.single");
+  int64_t timestamp;
+  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB("data/mtb.bin.ana",1,FLAG_ALLOW_CORRUPT_ROC_HEADERS,ROC_PSI46V2,"data/addressParameters.dat.single");
 
   clock_t begin = clock();
   while(1)
@@ -175,8 +200,8 @@ bool test_digital_single()
   double ref_timing = 1.69;
 
   std::vector<pixel> * evt = new std::vector<pixel>;
-  long int timestamp;
-  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB("mtb.bin.dig",1,FLAG_ALLOW_CORRUPT_ROC_HEADERS,ROC_PSI46DIG,"");
+  int64_t timestamp;
+  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB("data/mtb.bin.dig",1,FLAG_ALLOW_CORRUPT_ROC_HEADERS,ROC_PSI46DIG,"");
 
   clock_t begin = clock();
   while(1)
@@ -219,8 +244,8 @@ bool test_analog_module()
   double ref_timing = 3.76;
 
   std::vector<pixel> * evt = new std::vector<pixel>;
-  long int timestamp;
-  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB("mtb.bin.mod.ana",16,FLAG_HAVETBM,ROC_PSI46V2,"addressParameters.dat.mod");
+  int64_t timestamp;
+  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB("data/mtb.bin.mod.ana",16,FLAG_HAVETBM,ROC_PSI46V2,"data/addressParameters.dat.mod");
 
   clock_t begin = clock();
   while(1)
@@ -264,8 +289,8 @@ bool test_telescope_psi()
   double ref_timing = 7.3;
 
   std::vector<pixel> * evt = new std::vector<pixel>;
-  long int timestamp;
-  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB("mtb.bin.tel.psi",8,FLAG_ALLOW_CORRUPT_ROC_HEADERS,ROC_PSI46DIG,"");
+  int64_t timestamp;
+  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB("data/mtb.bin.tel.psi",8,FLAG_ALLOW_CORRUPT_ROC_HEADERS,ROC_PSI46DIG,"");
 
   clock_t begin = clock();
   while(1)
@@ -310,8 +335,8 @@ bool test_telescope_ral()
   double ref_timing = 99.7;
 
   std::vector<pixel> * evt = new std::vector<pixel>;
-  long int timestamp;
-  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderRAL("mtb.bin.tel.ral",8,FLAG_ALLOW_CORRUPT_ROC_HEADERS,ROC_PSI46DIG);
+  int64_t timestamp;
+  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderRAL("data/mtb.bin.tel.ral",8,FLAG_ALLOW_CORRUPT_ROC_HEADERS,ROC_PSI46DIG);
 
   clock_t begin = clock();
   while(1)
@@ -355,5 +380,83 @@ bool unit_tests() {
   if(!test_telescope_psi()) return false;
   if(!test_telescope_ral()) return false;
 
+  return true;
+}
+
+
+bool read_address_levels(const char* levelsFile, unsigned int rocs, levelset & addressLevels) {
+  LOG(logDEBUG3) << "READ_ADDRESS_LEVELS starting...";
+  // Reading files with format defined by psi46expert::DecodeRawPacket::Print
+  short level;
+  char dummyString[100];
+  char separation[100];
+  levels *tempLevels = new levels();
+  std::ifstream* file = new std::ifstream(levelsFile);
+
+  if ( *file == 0 ){
+    LOG(logERROR) << "READ_ADDRESS_LEVELS::ERROR cannot open the address levels file!";
+    return false;
+  }
+
+  // Skip reading first labels:
+  for (unsigned int iskip = 0; iskip < 4; iskip++ ) *file >> dummyString;
+
+  // Read separation line:
+  *file >> separation;
+
+  // Skip reading other labels:
+  for (unsigned int iskip = 0; iskip < 7; iskip++ ) *file >> dummyString;
+
+  // Read TBM UltraBlack, black and address levels
+  for (unsigned int ilevel = 0; ilevel < 8; ilevel++ ){
+    *file >> level;
+    addressLevels.TBM.level.push_back(level);
+
+    if ( file->eof() || file->bad() ){
+      LOG(logERROR) << "READ_ADDRESS_LEVELS::ERROR invalid format of address levels file!";
+      return false;
+    }
+  }
+
+  // Skip reading labels and separation lines:
+  for (unsigned int iskip = 0; iskip < 9; iskip++ ) *file >> dummyString;
+
+  // Read UltraBlack, black and address levels for each ROC
+  // Skip reading ROC labels:
+  *file >> dummyString;
+
+  // Read file until we reach the second separation line (so EOF):    
+  while((strcmp(dummyString,separation) != 0) && !file->eof() && !file->bad()) {
+
+    // Read ROC Ultrablack and black levels:
+    for (unsigned int ilevel = 0; ilevel < 3; ilevel++ ){
+      if(!file->eof()) *file >> level; else goto finish;
+      tempLevels->level.push_back(level);
+    }
+    addressLevels.ROC.push_back(*tempLevels);
+    tempLevels->level.clear();
+        
+    // Read ROC address level encoding:
+    for (unsigned int ilevel = 0; ilevel < 7; ilevel++ ){
+      if(!file->eof()) *file >> level; else goto finish;
+      tempLevels->level.push_back(level);
+    }
+    addressLevels.address.push_back(*tempLevels);
+    tempLevels->level.clear();
+        
+    // Skip reading ROC labels:
+    if(!file->eof()) *file >> dummyString; else goto finish;
+         
+  }
+
+ finish:
+  delete file;
+  delete tempLevels;
+    
+  if (addressLevels.address.size() != rocs) {
+    LOG(logERROR) << "READ_ADDRESS_LEVELS::ERROR No of ROCs in address levels file (" << addressLevels.address.size() << ") does not agree with given parameter (" << rocs << ")!";
+    return false;
+  }
+  LOG(logDEBUG3) << "READ_ADDRESS_LEVELS finished, read " << addressLevels.address.size() << " rocs:";
   return true;
 }

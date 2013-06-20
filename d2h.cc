@@ -124,7 +124,7 @@ int main( int argc, char **argv )
   cout << "roctype: " << (int)roctype << endl;
 
   CMSPixelFileDecoder * decoder;
-  decoder = new CMSPixelFileDecoderPSI_ATB(fileName.c_str(), nroc, flags, roctype, "");
+  decoder = new CMSPixelFileDecoderPSI_ATB(fileName.c_str(), nroc, flags, roctype, "addressParameters.dat");
 
   // gain file:
   double amax[52][80];
@@ -171,6 +171,10 @@ int main( int argc, char **argv )
     }
     else if( chip == 47 ) { // digital
       gainFileName = "/home/pitzl/psi/digi/chip47-Vdig15/gaindigi-Vdig15-Ia25-trim30.dat";
+      weib = 1;
+    }
+    else if( chip == 70 ) { // digital
+      gainFileName = "gainweib.dat";
       weib = 1;
     }
     else

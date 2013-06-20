@@ -16,6 +16,7 @@
 #include <vector>
 #include <math.h>
 #include <map>
+#include <inttypes.h>
 
 using namespace CMSPixel;
 
@@ -55,7 +56,7 @@ void CMSPixelStatistics::print() {
   LOG(logSUMMARY) << "    Pixels invalid:" << std::setw(8) <<  pixels_invalid;
 }
 
-bool CMSPixelFileDecoderPSI_ATB::process_rawdata(std::vector< int16_t > * data)
+bool CMSPixelFileDecoderPSI_ATB::process_rawdata(std::vector< uint16_t > * data)
 {
   // Currently nothing to do here...
   (void)data;
@@ -63,7 +64,7 @@ bool CMSPixelFileDecoderPSI_ATB::process_rawdata(std::vector< int16_t > * data)
   return true;
 }
 
-bool CMSPixelFileDecoderPSI_DTB::process_rawdata(std::vector< int16_t > * data) 
+bool CMSPixelFileDecoderPSI_DTB::process_rawdata(std::vector< uint16_t > * data) 
 {
   // Currently nothing to do here...
   (void)data;
@@ -71,7 +72,7 @@ bool CMSPixelFileDecoderPSI_DTB::process_rawdata(std::vector< int16_t > * data)
   return true;
 }
 
-bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< int16_t > * rawdata) {
+bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) {
   // IPBus data format: we need to delete some additional headers from the test board.
   // remove padding to 32bit words at the end of the event by reading the data length.
 
@@ -102,7 +103,7 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< int16_t > * rawdata) {
   LOG(logDEBUG4) << "IPBus event length: " << event_length << " bytes.";
   
   // Read the timestamp from the trailer:
-  int16_t stamp_pos = event_length/2+8;
+  uint16_t stamp_pos = (event_length/2) + 8;
   if(event_length%2 == 0) {
     cmstime = ((static_cast<uint64_t>(rawdata->at(stamp_pos+1))<<32)&0xff00000000) | 
       ((rawdata->at(stamp_pos+1)<<16)&0xff000000) | 
@@ -170,7 +171,7 @@ int CMSPixelFileDecoder::get_event(std::vector<pixel> * decevt, int64_t & timest
   // Check if stream is open:
   if(!mtbStream) return DEC_ERROR_INVALID_FILE;
 
-  std::vector < int16_t > data;
+  std::vector < uint16_t > data;
   LOG(logDEBUG) << "STATUS Start chopping file.";
 
   // Cut off the next event from the filestream:
@@ -189,7 +190,7 @@ int CMSPixelFileDecoder::get_event(std::vector<pixel> * decevt, int64_t & timest
   return status;
 }
 
-bool CMSPixelFileDecoder::readWord(int16_t &word) {
+bool CMSPixelFileDecoder::readWord(uint16_t &word) {
   unsigned char a, b;
   if(feof(mtbStream) || !fread(&a,sizeof(a),1,mtbStream) || !fread(&b,sizeof(b),1,mtbStream)) 
     return false;
@@ -197,7 +198,7 @@ bool CMSPixelFileDecoder::readWord(int16_t &word) {
   return true;
 }
 
-bool CMSPixelFileDecoderRAL::readWord(int16_t &word) {
+bool CMSPixelFileDecoderRAL::readWord(uint16_t &word) {
   unsigned char a, b;
   if(feof(mtbStream) || !fread(&a,sizeof(a),1,mtbStream) || !fread(&b,sizeof(b),1,mtbStream)) 
     return false;
@@ -206,9 +207,9 @@ bool CMSPixelFileDecoderRAL::readWord(int16_t &word) {
   return true;
 }
 
-bool CMSPixelFileDecoder::chop_datastream(std::vector< int16_t > * rawdata) {
+bool CMSPixelFileDecoder::chop_datastream(std::vector< uint16_t > * rawdata) {
 
-  int16_t word;
+  uint16_t word;
   rawdata->clear();
     
   LOG(logDEBUG1) << "Chopping datastream at MTB headers...";
@@ -392,7 +393,7 @@ CMSPixelEventDecoder::~CMSPixelEventDecoder() {
   // Nothing to do.
 }
 
-int CMSPixelEventDecoder::get_event(std::vector< int16_t > data, std::vector<pixel> * evt) {
+int CMSPixelEventDecoder::get_event(std::vector< uint16_t > data, std::vector<pixel> * evt) {
 
   LOG(logDEBUG) << "Start decoding.";
   LOG(logDEBUG1) << "Received " << 16*data.size() << " bits of event data.";
@@ -403,8 +404,8 @@ int CMSPixelEventDecoder::get_event(std::vector< int16_t > data, std::vector<pix
 
   unsigned int pos = 0;
   
-  // Some data needs preprocessing, map uint to the integer level values (analog chips)
-  if(!preprocessing(&data)) return DEC_ERROR_INVALID_EVENT;
+  // It might be interesting to print the raw data stream once:
+  LOG(logDEBUG4) << print_data(&data);
 
   // Check sanity
   int status = pre_check_sanity(&data,&pos);
@@ -432,7 +433,7 @@ int CMSPixelEventDecoder::get_event(std::vector< int16_t > data, std::vector<pix
 }
 
 
-int CMSPixelEventDecoder::pre_check_sanity(std::vector< int16_t > * data, unsigned int * pos) {
+int CMSPixelEventDecoder::pre_check_sanity(std::vector< uint16_t > * data, unsigned int * pos) {
 
   LOG(logDEBUG2) << "Checking pre decoding event sanity...";
   unsigned int length = L_GRANULARITY*data->size();
@@ -485,6 +486,7 @@ int CMSPixelEventDecoder::pre_check_sanity(std::vector< int16_t > * data, unsign
   length = L_GRANULARITY*data->size();
 
   // Ugly hack for single analog/xdb chip readout without TBM or emulator: we have some testboard trailer...
+  //  if(0) {
   if((theROC & ROC_PSI46V2 || theROC & ROC_PSI46XDB) && !(flag & FLAG_HAVETBM) && noOfROC == 1) {
     data->erase(data->end() - 6,data->end());
     LOG(logDEBUG3) << "FIXME(singleAnaROC): Removed some trailers.";
@@ -569,13 +571,7 @@ CMSPixelEventDecoderDigital::CMSPixelEventDecoderDigital(unsigned int rocs, int 
   load_constants(flags);
 }
 
-bool CMSPixelEventDecoderDigital::preprocessing(std::vector< int16_t > * data) {
-  // Nothing to do for digital chips here...
-  LOG(logDEBUG4) << print_data(data);
-  return true;
-}
-
-std::string CMSPixelEventDecoderDigital::print_data(std::vector< int16_t> * data) {
+std::string CMSPixelEventDecoderDigital::print_data(std::vector< uint16_t> * data) {
   // This simply prints the raw data, useful only for debugging.
   std::stringstream os;
   for(unsigned int i = 0; i < data->size();i++) 
@@ -584,7 +580,7 @@ std::string CMSPixelEventDecoderDigital::print_data(std::vector< int16_t> * data
   return os.str();
 }
 
-int CMSPixelEventDecoderDigital::get_bit(std::vector< int16_t > data, int bit_offset) {
+int CMSPixelEventDecoderDigital::get_bit(std::vector< uint16_t > data, int bit_offset) {
   unsigned int ibyte=bit_offset/L_GRANULARITY;
   int byteval;
   if (ibyte < data.size()) {
@@ -599,7 +595,7 @@ int CMSPixelEventDecoderDigital::get_bit(std::vector< int16_t > data, int bit_of
   return bitval;
 }
 
-int CMSPixelEventDecoderDigital::get_bits(std::vector< int16_t > data, int bit_offset,int number_of_bits) {
+int CMSPixelEventDecoderDigital::get_bits(std::vector< uint16_t > data, int bit_offset,int number_of_bits) {
   int value = 0;
   for (int ibit = 0; ibit < number_of_bits; ibit++) {
     value = 2*value+get_bit(data,bit_offset+ibit);
@@ -608,7 +604,7 @@ int CMSPixelEventDecoderDigital::get_bits(std::vector< int16_t > data, int bit_o
   return value;
 }
 
-bool CMSPixelEventDecoderDigital::find_roc_header(std::vector< int16_t > data, unsigned int * pos, unsigned int)
+bool CMSPixelEventDecoderDigital::find_roc_header(std::vector< uint16_t > data, unsigned int * pos, unsigned int)
 {
   // ROC header: 0111 1111 10SD, S & D are reserved status bits.
   // Possible ROC headers: 0x7f8 0x7f9 0x7fa 0x7fb
@@ -629,7 +625,7 @@ bool CMSPixelEventDecoderDigital::find_roc_header(std::vector< int16_t > data, u
   else return false;
 }
 
-bool CMSPixelEventDecoderDigital::find_tbm_trailer(std::vector< int16_t > data, unsigned int pos)
+bool CMSPixelEventDecoderDigital::find_tbm_trailer(std::vector< uint16_t > data, unsigned int pos)
 {
   if (get_bits(data, pos, L_TRAILER)==0x7fa) {
     LOG(logDEBUG1) << "Found TBM trailer at " << pos << ".";
@@ -638,7 +634,7 @@ bool CMSPixelEventDecoderDigital::find_tbm_trailer(std::vector< int16_t > data, 
   return false;
 }
 
-bool CMSPixelEventDecoderDigital::find_tbm_header(std::vector< int16_t > data, unsigned int pos)
+bool CMSPixelEventDecoderDigital::find_tbm_header(std::vector< uint16_t > data, unsigned int pos)
 {
   if (get_bits(data, pos, L_HEADER)==0x7ff) {
     LOG(logDEBUG1) << "Found TBM header at " << pos << ".";
@@ -658,7 +654,7 @@ std::string CMSPixelEventDecoderDigital::print_hit(int hit) {
   return os.str();
 }
 
-int CMSPixelEventDecoderDigital::decode_hit(std::vector< int16_t > data, unsigned int * pos, unsigned int roc, pixel * pixhit)
+int CMSPixelEventDecoderDigital::decode_hit(std::vector< uint16_t > data, unsigned int * pos, unsigned int roc, pixel * pixhit)
 {
   if(L_GRANULARITY*data.size() - *pos < L_HIT) {
     LOG(logDEBUG1) << "Dropping " << L_GRANULARITY*data.size() - *pos << " bit at the end of the event.";
@@ -731,70 +727,60 @@ CMSPixelEventDecoderAnalog::CMSPixelEventDecoderAnalog(unsigned int rocs, int fl
   addressLevels = addLevels;
 }
 
-bool CMSPixelEventDecoderAnalog::preprocessing(std::vector< int16_t > * data) {
-  // Restoring analog levels being negative:
-  for(unsigned int i = 0; i < data->size();i++) {
-    data->at(i) = data->at(i) & 0x0fff;
-    if( data->at(i) & 0x0800 ) data->at(i) -= 4096; //hex 800 = 2048
-  }
-  LOG(logDEBUG4) << print_data(data);
-  return true;
-}
-
-std::string CMSPixelEventDecoderAnalog::print_data(std::vector< int16_t > * data) {
+std::string CMSPixelEventDecoderAnalog::print_data(std::vector< uint16_t > * data) {
   std::stringstream os;
   for(unsigned int i = 0; i < data->size();i++) {
-    os << std::dec << data->at(i) << " ";
+    os << std::dec << sign(data->at(i)) << " ";
   }
   return os.str();
 }
 
-bool CMSPixelEventDecoderAnalog::find_roc_header(std::vector< int16_t > data, unsigned int * pos, unsigned int roc) {
+bool CMSPixelEventDecoderAnalog::find_roc_header(std::vector< uint16_t > data, unsigned int * pos, unsigned int roc) {
   // Did we reach max number of ROCs read in from address levels file?
   if(roc >= addressLevels.ROC.size()) return false;
     
   // Corrupt ROC header for single analog ROCs w/o TBM: somehow this looks like Black, UltraBlack:
-  if ((flag & FLAG_ALLOW_CORRUPT_ROC_HEADERS) && findBin(data[*pos],2,addressLevels.ROC[roc].level) == 1 
-	  && findBin(data[*pos+1],2,addressLevels.ROC[roc].level) == 0 ) {
-    LOG(logDEBUG1) << "Found corrupt ROC header ("<< std::setw(5) << data[*pos] << " " << std::setw(5) << data[*pos+1] << ") after " << std::dec << *pos << " bits.";
+  if ((flag & FLAG_ALLOW_CORRUPT_ROC_HEADERS) && findBin(sign(data[*pos]),2,addressLevels.ROC[roc].level) == 1 
+      && findBin(sign(data[*pos+1]),2,addressLevels.ROC[roc].level) == 0 ) {
+    LOG(logDEBUG1) << "Found corrupt ROC header ("<< std::setw(5) << sign(data[*pos]) << " " << std::setw(5) << sign(data[*pos+1]) << ") after " << std::dec << *pos << " bits.";
     *pos += L_ROC_HEADER;
     return true;
   }
   // ROC header signature: UltraBlack, Black, lastDAC
-  else if(findBin(data[*pos],2,addressLevels.ROC[roc].level) == 0 
-	  && findBin(data[*pos+1],2,addressLevels.ROC[roc].level) == 1 ) {
-    LOG(logDEBUG1) << "Found ROC header ("<< std::setw(5) << data[*pos] << " " << std::setw(5) << data[*pos+1] << ") after " << std::dec << *pos << " bits.";
+  else if(findBin(sign(data[*pos]),2,addressLevels.ROC[roc].level) == 0 
+	  && findBin(sign(data[*pos+1]),2,addressLevels.ROC[roc].level) == 1 ) {
+    LOG(logDEBUG1) << "Found ROC header ("<< std::setw(5) << sign(data[*pos]) << " " << std::setw(5) << sign(data[*pos+1]) << ") after " << std::dec << *pos << " bits.";
     *pos += L_ROC_HEADER;
     return true;
   }
   else return false;
 }
 
-bool CMSPixelEventDecoderAnalog::find_tbm_trailer(std::vector< int16_t > data, unsigned int pos) {
+bool CMSPixelEventDecoderAnalog::find_tbm_trailer(std::vector< uint16_t > data, unsigned int pos) {
   // TBM trailer signature: UltraBlack, UltraBlack, Black, Black (+ 4 status)
-  if(     findBin(data[pos],3,addressLevels.TBM.level) != 0 
-	  || findBin(data[pos+1],3,addressLevels.TBM.level) != 0 
-	  || findBin(data[pos+2],3,addressLevels.TBM.level) != 1 
-	  || findBin(data[pos+3],3,addressLevels.TBM.level) != 1) {
+  if(     findBin(sign(data[pos]),3,addressLevels.TBM.level) != 0 
+	  || findBin(sign(data[pos+1]),3,addressLevels.TBM.level) != 0 
+	  || findBin(sign(data[pos+2]),3,addressLevels.TBM.level) != 1 
+	  || findBin(sign(data[pos+3]),3,addressLevels.TBM.level) != 1) {
     LOG(logDEBUG1) << "Found TBM trailer at " << pos << ".";
     return false;
   }
   else return true;
 }
 
-bool CMSPixelEventDecoderAnalog::find_tbm_header(std::vector< int16_t > data, unsigned int pos) {
+bool CMSPixelEventDecoderAnalog::find_tbm_header(std::vector< uint16_t > data, unsigned int pos) {
   // TBM trailer signature: UltraBlack, UltraBlack, UltraBlack, Black (+ 4 trigger num)
-  if(     findBin(data[pos],3,addressLevels.TBM.level) != 0 
-	  || findBin(data[pos+1],3,addressLevels.TBM.level) != 0 
-	  || findBin(data[pos+2],3,addressLevels.TBM.level) != 0 
-	  || findBin(data[pos+3],3,addressLevels.TBM.level) != 1) {
+  if(     findBin(sign(data[pos]),3,addressLevels.TBM.level) != 0 
+	  || findBin(sign(data[pos+1]),3,addressLevels.TBM.level) != 0 
+	  || findBin(sign(data[pos+2]),3,addressLevels.TBM.level) != 0 
+	  || findBin(sign(data[pos+3]),3,addressLevels.TBM.level) != 1) {
     LOG(logDEBUG1) << "Found TBM header at " << pos << ".";
     return false;
   }
   else return true;
 }
 
-int CMSPixelEventDecoderAnalog::decode_hit(std::vector< int16_t > data, unsigned int * pos, unsigned int roc, pixel * pixhit) {
+int CMSPixelEventDecoderAnalog::decode_hit(std::vector< uint16_t > data, unsigned int * pos, unsigned int roc, pixel * pixhit) {
   if(L_GRANULARITY*data.size() - *pos < L_HIT) {
     LOG(logDEBUG4) << "Not enough data for a pixel hit.";
     *pos = L_GRANULARITY*data.size();   // Set pointer to the end of data.
@@ -802,12 +788,12 @@ int CMSPixelEventDecoderAnalog::decode_hit(std::vector< int16_t > data, unsigned
   }
     
   // Find levels and translate them into DCOL and pixel addresses:
-  int c1 = findBin( data[*pos+0], 5, addressLevels.address[roc].level );
-  int c0 = findBin( data[*pos+1], 5, addressLevels.address[roc].level );
-  int a2 = findBin( data[*pos+2], 5, addressLevels.address[roc].level );
-  int a1 = findBin( data[*pos+3], 5, addressLevels.address[roc].level );
-  int a0 = findBin( data[*pos+4], 5, addressLevels.address[roc].level );
-  int aa = data[*pos+5];
+  int c1 = findBin( sign(data[*pos+0]), 5, addressLevels.address[roc].level );
+  int c0 = findBin( sign(data[*pos+1]), 5, addressLevels.address[roc].level );
+  int a2 = findBin( sign(data[*pos+2]), 5, addressLevels.address[roc].level );
+  int a1 = findBin( sign(data[*pos+3]), 5, addressLevels.address[roc].level );
+  int a0 = findBin( sign(data[*pos+4]), 5, addressLevels.address[roc].level );
+  int aa = sign(data[*pos+5]);
 
   *pos += L_HIT; //jump to next hit.
 
@@ -839,4 +825,11 @@ int CMSPixelEventDecoderAnalog::findBin(int adc, int nlevel, std::vector< int > 
   if( adc < level[0] ) return 0;
   for( int i = 0; i < nlevel; i++ ) if( adc >= level[i] && adc < level[i+1] ) return i;
   return nlevel;
+}
+
+int16_t CMSPixelEventDecoderAnalog::sign(uint16_t val) {
+  // Convert unsigned int into positive and negative levels:
+  int16_t ret = val & 0x0fff;
+  if(ret & 0x0800) return ret -= 4096;
+  else return ret;
 }

@@ -66,15 +66,20 @@ namespace CMSPixel {
   } pixel;
 
   // Struct for Decoder levels
-  typedef struct {
+  class levels {
+  public:
+  levels() : level() {};
     std::vector< int > level;
-  } levels;
+  };
     
-  typedef struct {
+  class levelset {
+  public:
+  levelset() :
+    TBM(), ROC(), address() {};
     levels TBM;
     std::vector< levels > ROC;
     std::vector< levels > address;
-  } levelset;
+  };
 
   class CMSPixelStatistics {
   public:
@@ -132,7 +137,7 @@ namespace CMSPixel {
   public:
     CMSPixelEventDecoder(unsigned int rocs, int flags, uint8_t ROCTYPE);
     virtual ~CMSPixelEventDecoder();
-    int get_event(std::vector< int16_t > data, std::vector<pixel> * evt);
+    int get_event(std::vector< uint16_t > data, std::vector<pixel> * evt);
     CMSPixelStatistics statistics;
 
   protected:
@@ -146,14 +151,14 @@ namespace CMSPixel {
   private:
     // Purely virtual, to be implemented in the child classes (digital/analog):
     inline virtual void load_constants(int flags) = 0;
-    virtual bool preprocessing(std::vector< int16_t > * data) = 0;
-    virtual bool find_roc_header(std::vector< int16_t > data, unsigned int * pos, unsigned int roc) = 0;
-    virtual bool find_tbm_header(std::vector< int16_t > data, unsigned int pos) = 0;
-    virtual bool find_tbm_trailer(std::vector< int16_t > data, unsigned int pos) = 0;
-    virtual int decode_hit(std::vector< int16_t > data, unsigned int * pos, unsigned int roc, pixel * hit) = 0;
+    virtual bool find_roc_header(std::vector< uint16_t > data, unsigned int * pos, unsigned int roc) = 0;
+    virtual bool find_tbm_header(std::vector< uint16_t > data, unsigned int pos) = 0;
+    virtual bool find_tbm_trailer(std::vector< uint16_t > data, unsigned int pos) = 0;
+    virtual int decode_hit(std::vector< uint16_t > data, unsigned int * pos, unsigned int roc, pixel * hit) = 0;
+    virtual std::string print_data(std::vector< uint16_t> * data) = 0;
             
     // These functions are the same no matter what data format we have:
-    int pre_check_sanity(std::vector< int16_t > * data, unsigned int * pos);
+    int pre_check_sanity(std::vector< uint16_t > * data, unsigned int * pos);
     int post_check_sanity(std::vector< pixel > * evt, unsigned int rocs);
 
   };
@@ -184,15 +189,15 @@ namespace CMSPixel {
       L_TRAILER = 8;    // FPGA trailer without TBM emu: 6 words;
     };
 
-    bool preprocessing(std::vector< int16_t > * data);
-    bool find_roc_header(std::vector< int16_t > data, unsigned int * pos, unsigned int roc);
-    bool find_tbm_header(std::vector< int16_t > adc, unsigned int pos);    
-    bool find_tbm_trailer(std::vector< int16_t > adc, unsigned int pos);
-    int decode_hit(std::vector< int16_t > data, unsigned int * pos, unsigned int roc, pixel * hit);
+    bool find_roc_header(std::vector< uint16_t > data, unsigned int * pos, unsigned int roc);
+    bool find_tbm_header(std::vector< uint16_t > adc, unsigned int pos);    
+    bool find_tbm_trailer(std::vector< uint16_t > adc, unsigned int pos);
+    int decode_hit(std::vector< uint16_t > data, unsigned int * pos, unsigned int roc, pixel * hit);
 
   private:
     int findBin(int adc, int nlevel, std::vector< int > level);
-    std::string print_data(std::vector< int16_t> * data);
+    int16_t sign(uint16_t val);
+    std::string print_data(std::vector< uint16_t> * data);
     levelset addressLevels;
   };
 
@@ -227,16 +232,15 @@ namespace CMSPixel {
       L_TRAILER = 28;
     };
 
-    bool preprocessing(std::vector< int16_t > * data);            
-    bool find_roc_header(std::vector< int16_t > data, unsigned int * pos, unsigned int roc);
-    bool find_tbm_header(std::vector< int16_t > adc, unsigned int pos);
-    bool find_tbm_trailer(std::vector< int16_t > adc, unsigned int pos);
-    int decode_hit(std::vector< int16_t > data, unsigned int * pos, unsigned int roc, pixel * hit);
+    bool find_roc_header(std::vector< uint16_t > data, unsigned int * pos, unsigned int roc);
+    bool find_tbm_header(std::vector< uint16_t > adc, unsigned int pos);
+    bool find_tbm_trailer(std::vector< uint16_t > adc, unsigned int pos);
+    int decode_hit(std::vector< uint16_t > data, unsigned int * pos, unsigned int roc, pixel * hit);
 
   private:
-    int get_bit(std::vector< int16_t > data, int bit_offset);
-    int get_bits(std::vector< int16_t > data, int bit_offset,int number_of_bits);
-    std::string print_data(std::vector< int16_t> * data);
+    int get_bit(std::vector< uint16_t > data, int bit_offset);
+    int get_bits(std::vector< uint16_t > data, int bit_offset,int number_of_bits);
+    std::string print_data(std::vector< uint16_t> * data);
     std::string print_hit(int hit);
   };
 
@@ -258,19 +262,19 @@ namespace CMSPixel {
     virtual bool word_is_trigger(unsigned short word) = 0;
     virtual bool word_is_header(unsigned short word) = 0;
     virtual bool word_is_2nd_header(unsigned short word) = 0;
-    virtual bool process_rawdata(std::vector< int16_t > * rawdata) = 0;
+    virtual bool process_rawdata(std::vector< uint16_t > * rawdata) = 0;
 
     CMSPixelStatistics statistics;
     CMSPixelEventDecoder * evt;
 
   protected:
     uint8_t theROC;
-    virtual bool readWord(int16_t &word);
+    virtual bool readWord(uint16_t &word);
     FILE * mtbStream;
     int64_t cmstime;
 
   private:
-    bool chop_datastream(std::vector< int16_t > * rawdata);
+    bool chop_datastream(std::vector< uint16_t > * rawdata);
     bool read_address_levels(const char* levelsFile, unsigned int rocs, levelset & addressLevels);
     std::string print_addresslevels(levelset addLevels);
     levelset addressLevels;
@@ -284,7 +288,7 @@ namespace CMSPixel {
     inline int addflags(int flags) {
       return (flags | FLAG_16BITS_PER_WORD);
     };
-    bool readWord(int16_t &word);
+    bool readWord(uint16_t &word);
     inline bool word_is_data(unsigned short word) {
       // IPBus format starts with 0xFFFFFFFF, no other headers allowed.
       if(word == 0xFFFF) return true;
@@ -304,7 +308,7 @@ namespace CMSPixel {
       // IPBus header is 32bit, so check second part (also 0xFFFF):
       return word_is_header(word);
     };
-    bool process_rawdata(std::vector< int16_t > * rawdata);
+    bool process_rawdata(std::vector< uint16_t > * rawdata);
   };
 
 class CMSPixelFileDecoderPSI_ATB : public CMSPixelFileDecoder {
@@ -329,7 +333,7 @@ class CMSPixelFileDecoderPSI_ATB : public CMSPixelFileDecoder {
       (void)word;
       return true;
     };
-    bool process_rawdata(std::vector< int16_t > * rawdata);
+    bool process_rawdata(std::vector< uint16_t > * rawdata);
   };
 
 class CMSPixelFileDecoderPSI_DTB : public CMSPixelFileDecoder {
@@ -354,7 +358,7 @@ class CMSPixelFileDecoderPSI_DTB : public CMSPixelFileDecoder {
       (void)word;
       return true;
     };
-    bool process_rawdata(std::vector< int16_t > * rawdata);
+    bool process_rawdata(std::vector< uint16_t > * rawdata);
   };
 
 

@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
 
   CMSPixelStatistics global_statistics;
   std::vector<pixel> * evt = new std::vector<pixel>;
-  long int timestamp = 0;
+  int64_t timestamp = 0;
 
   int events = atoi(argv[2]);
   std::cout << "Decoding " << events << " events." << std::endl;
