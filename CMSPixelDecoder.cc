@@ -104,19 +104,26 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
   
   // Read the timestamp from the trailer:
   uint16_t stamp_pos = (event_length/2) + 8;
+
+  uint64_t time2 = rawdata->at(stamp_pos+2);
+  uint64_t time1 = rawdata->at(stamp_pos+1);
+  uint64_t time0 = rawdata->at(stamp_pos);
+
   if(event_length%2 == 0) {
-    cmstime = ((static_cast<uint64_t>(rawdata->at(stamp_pos+1))<<32)&0xff00000000) | 
-      ((rawdata->at(stamp_pos+1)<<16)&0xff000000) | 
-      ((rawdata->at(stamp_pos)<<16)&0xff0000) | 
-      ((rawdata->at(stamp_pos))&0xff00) | 
-      ((rawdata->at(stamp_pos+2)>>8)&0xff);
+    
+    cmstime = ((time1<<32)&0xff00000000LLU) | 
+      ((time1<<16)&0xff000000) | 
+      ((time0<<16)&0xff0000) | 
+      ((time0)&0xff00) | 
+      ((time2>>8)&0xff);
+    // cmstime = ((static_cast<uint64_t>(rawdata->at(stamp_pos+1))<<32)&0xff00000000) |  ((rawdata->at(stamp_pos+1)<<16)&0xff000000) | ((rawdata->at(stamp_pos)<<16)&0xff0000) | ((rawdata->at(stamp_pos))&0xff00) | ((rawdata->at(stamp_pos+2)>>8)&0xff);
   }
   else {
-    cmstime = ((static_cast<uint64_t>(rawdata->at(stamp_pos+2))<<24)&0xff00000000) | 
-      ((rawdata->at(stamp_pos+1)<<24)&0xff000000) | 
-      ((rawdata->at(stamp_pos+1)<<8)&0xff0000) | 
-      ((rawdata->at(stamp_pos)<<8)&0xff00) | 
-      ((rawdata->at(stamp_pos+2))&0xff);
+    cmstime = ((time2<<24)&0xff00000000LLU) | 
+      ((time1<<24)&0xff000000) | 
+      ((time1<<8)&0xff0000) | 
+      ((time0<<8)&0xff00) | 
+      ((time2)&0xff);
   }
 
   LOG(logDEBUG4) << "IPBus timestamp: " << std::hex << cmstime << std::dec << " = " << cmstime << "us.";
@@ -229,7 +236,7 @@ bool CMSPixelFileDecoder::chop_datastream(std::vector< uint16_t > * rawdata) {
       }
       LOG(logDEBUG4) << "Headers: " << head[1] << " " << head[2] << " " << head[3];
       // Calculating the tigger time of the event:
-      cmstime = ((static_cast<uint64_t>(head[1])<<32)&0xffff00000000) | ((static_cast<uint64_t>(head[2])<<16)&0xffff0000) | (head[3]&0xffff);
+      cmstime = ((static_cast<uint64_t>(head[1])<<32)&0xffff00000000LLU) | ((static_cast<uint64_t>(head[2])<<16)&0xffff0000) | (head[3]&0xffff);
       LOG(logDEBUG1) << "Timestamp: " << cmstime;
     }
     else if(word_is_header(word) ) {
@@ -503,7 +510,7 @@ int CMSPixelEventDecoder::pre_check_sanity(std::vector< uint16_t > * data, unsig
   }
     
   if(!found) {
-    LOG(logERROR) << "Event contains no ROC header.";
+    LOG(logERROR) << "Event contains no valid ROC header: " << print_data(data);
     statistics.evt_invalid++;
     return DEC_ERROR_NO_ROC_HEADER;
   }
