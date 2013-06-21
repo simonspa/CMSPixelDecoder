@@ -35,29 +35,29 @@
 
 #include <vector>
 
-using namespace std;
 using namespace CMSPixel;
 
 int flags;
-
 int fCluCut = 1; // clustering: 1 = no gap (15.7.2012)
 
 int main( int argc, char **argv )
 {
   int run = 0;
-  string path;
+  std::string path;
 
   int nroc = 1;
   bool fullNameSpecified = 0;
 
   int chip = 8; // default chip
-  string gainFileName;
+  std::string gainFileName;
   bool gain_set = false;
   
-  string fileName;
-  string histoName;
+  std::string fileName;
+  std::string histoName;
 
   Log::ReportingLevel() = Log::FromString("SUMMARY");
+
+  bool weib = 0;
 
   // process input flags:
   for( int i = 1; i < argc; i++ ) {
@@ -85,6 +85,9 @@ int main( int argc, char **argv )
     // Switch on TBM usage
     else if( !strcmp( argv[i], "-tbm" ) ) flags |= FLAG_HAVETBM;
 
+    // Allow all (also corrupt) ROC headers:
+    else if( !strcmp( argv[i], "-all" ) ) flags |= FLAG_ALLOW_CORRUPT_ROC_HEADERS;
+
     // Specify chip number
     else if( !strcmp( argv[i], "-c" ) ) {
       chip = atoi( argv[++i] );
@@ -96,19 +99,24 @@ int main( int argc, char **argv )
       gain_set = true;
     }
 
+    // Set Weibull flag for calibration:
+    else if(!strcmp( argv[i], "-w" ) ) {
+      weib = true;
+    }
+
     // Set debug level
     else if( !strcmp(argv[i], "-d" ) ) {
       Log::ReportingLevel() = Log::FromString(argv[++i]);      
     }
   }
 
-  cout << "nroc = " << nroc << endl;
+ std::cout << "nroc = " << nroc << std::endl;
 
   // input binary file:
   if( !fullNameSpecified ){
     fileName = path + "/mtb.bin";
   }
-  cout << "fileName: "<< fileName << endl;
+ std::cout << "fileName: "<< fileName << std::endl;
 
   // Get the ROC type
   // Naming scheme:
@@ -121,7 +129,7 @@ int main( int argc, char **argv )
   else if(chip < 200) roctype = ROC_PSI46XDB;
   else if(chip < 300) roctype = ROC_PSI46DIG;
   else roctype = ROC_PSI46DIGV2;
-  cout << "roctype: " << (int)roctype << endl;
+ std::cout << "roctype: " << (int)roctype << std::endl;
 
   CMSPixelFileDecoder * decoder;
   decoder = new CMSPixelFileDecoderPSI_ATB(fileName.c_str(), nroc, flags, roctype, "addressParameters.dat");
@@ -133,58 +141,17 @@ int main( int argc, char **argv )
   double vert[52][80];
   double expo[52][80];
 
-  bool weib = 0;
   double keV = 0.450; // large Vcal -> keV
 
   if(!gain_set) {
-    if(      chip ==  6 ) gainFileName = "/home/pitzl/psi/slc5/psi46expert/chip6/gaintanh_C6.dat";
-    else if( chip ==  7 ) gainFileName = "/home/pitzl/psi/slc5/psi46expert/chip7/gaintanh_C7_tbm.dat";
-    else if( chip == 10 )
-      gainFileName = "/home/pitzl/psi/slc5/psi46expert/chip10-tb/gaintanh-chip10-ia24-board9-bias150.dat"; // Jun 2012
-    else if( chip == 11 )
-      gainFileName = "/home/pitzl/psi/slc5/psi46expert/chip11/gaintanh-chip11-board9-tbm-Jun.dat";
-    else if( chip == 14 ) gainFileName = "/home/pitzl/psi/slc5/psi46expert/chip14/gaintanh.dat";
-    else if( chip == 8 ) gainFileName = "gaintanh_C8.dat";
-    else if( chip == 102 ) {
-      gainFileName = "/home/pitzl/psi/slc5/psi46expert/xdb2/gainweib-xdb2-ia35c-trim30-bias150-Friday.dat";
-      weib = 1;
-    }
-    else if( chip == 202 ){ // digital
-      gainFileName = "/home/pitzl/psi/digi/chip202/gainweib-Ia40-Vdig14-trim18.dat"; // lab
-      weib = 1;
-    }
-    else if( chip == 203 ) { // digital
-      gainFileName = "/home/pitzl/psi/digi/chip203/gaindigi-chip203-Ia30-Vdig14-trim35.dat";
-      weib = 1;
-    }
-    else if( chip == 204 ) { // digital
-      gainFileName = "/home/pitzl/psi/digi/chip204/gaindigi.dat";
-      weib = 1;
-    }
-    else if( chip == 205 ) { // digital
-      gainFileName = "gaindigi-Vdig15-Ia25-trim28-Mar4.dat";
-      weib = 1;
-    }
-    else if( chip == 39 ) { // digital
-      gainFileName = "/home/pitzl/psi/digi/chip39/gaindigi-Ia25-Vdig12-trim2424.dat";
-      weib = 1;
-    }
-    else if( chip == 47 ) { // digital
-      gainFileName = "/home/pitzl/psi/digi/chip47-Vdig15/gaindigi-Vdig15-Ia25-trim30.dat";
-      weib = 1;
-    }
-    else if( chip == 70 ) { // digital
-      gainFileName = "gainweib.dat";
-      weib = 1;
-    }
-    else
-      gainFileName = "gaintanh.dat";
+    std::cout << "No gain file specified." << std::endl;
+    return(2);
   }
 
   ifstream gainFile( gainFileName.c_str() );
 
   if( !gainFile ) {
-    cout << "no gain file " << gainFileName << endl;
+   std::cout << "Gain file " << gainFileName << " is not accessible." << std::endl;
     return(2);
   }
   else {
@@ -208,8 +175,11 @@ int main( int argc, char **argv )
     if( chip ==  39 ) keV = 0.350; // digital: 7 = large/small Vcal
     if( chip ==  47 ) keV = 0.350; // copy
 
-    cout << endl;
-    cout << "gain: " << gainFileName << endl;
+   std::cout << std::endl;
+   std::cout << "Gain file: " << gainFileName << std::endl;
+    if(weib) std::cout << "  Weibull gain calibration." << std::endl;
+    else std::cout << " TanH gain calibration." << std::endl;
+
     while( gainFile >> ih ){
       gainFile >> icol;
       gainFile >> irow;
@@ -233,20 +203,21 @@ int main( int argc, char **argv )
       vert[icol][irow] = vo*aa;
       expo[icol][irow] = ex;
     }
-    cout << endl;
+   std::cout << std::endl;
   }//gainFile
 
 
   // (re-)create root file:
-  histoName = printf("data%06d.root", run );
+  if(run != 0) histoName = "data" + ZeroPadNumber(run,6) + ".root";
+  else histoName = "data-norun.root";
   TFile* histoFile = new TFile( histoName.c_str(), "RECREATE");
 
-  // Book some additional ROOT histograms:
-  for( int i = 0 ; i < 52 ; i++)  {
-    hcc[i] = new TH1D( Form( "h1%02i", i ), Form( "cluster charge for col %i  ; cluster charge [ke] ; entries", i), 100, 0, 100 ); //h100-h151
-  }
+  std::cout << "Created ROOT file " << histoName << std::endl;
 
-  int nw = 0;
+  // Booking the histograms:
+  if(!bookHistograms()) return(2);
+
+   int nw = 0;
   int nd = 0;
   int ng = 0;
 
@@ -360,7 +331,7 @@ int main( int argc, char **argv )
     int npxdcol[26] = {0};
 
     // Loop over all pixels found:
-    for( vector<pixel>::iterator px = decevt->begin(); px != decevt->end(); px++ ){
+    for( std::vector<pixel>::iterator px = decevt->begin(); px != decevt->end(); px++ ){
 
       // Event display:
       if( led ) hed[ned]->Fill( (*px).col, (*px).row, (*px).raw );
@@ -405,10 +376,6 @@ int main( int argc, char **argv )
 	(*px).vcal = (TMath::ATanH( Ared / ma9 ) *
 		      Gain[(*px).col][(*px).row] + horz[(*px).col][(*px).row] ) * keV; // [ke]
 
-      //if( led )
-      if( led ) cout << "gain: " << (*px).col << "  " << (*px).row
-		     << "  " << (*px).raw << "  " << (*px).vcal << endl;
-
       // Calibration across col psi46
       double acor = 1.0 + 0.20 * ( (*px).col - 25.5 ) / 51.0; 
       // Not necessary anymore for everything from PSI46XDB:
@@ -445,10 +412,12 @@ int main( int argc, char **argv )
     unsigned int kclus = 0;
     std::vector<cluster> clust = getHits(decevt);
 
-    cout << "(clk " << time/39936E3 
-	 << "s, trg " << decoder->statistics.head_trigger 
-	 << ", px" << decevt->size() 
-	 << ", cl " << clust.size() << ")" << endl;
+    if(ndata%1000 == 0) {
+    std::cout << "(clk " << time/39936E3 
+	      << "s, trg " << decoder->statistics.head_trigger 
+	      << ", px" << decevt->size() 
+	      << ", cl " << clust.size() << ")" << std::endl;
+    }
 
     nclus += clust.size();
     kclus = clust.size();
@@ -456,7 +425,7 @@ int main( int argc, char **argv )
     h003->Fill( clust.size() );
 
     // look at clusters:
-    for( vector<cluster>::iterator c = clust.begin(); c != clust.end(); c++ ){
+    for( std::vector<cluster>::iterator c = clust.begin(); c != clust.end(); c++ ){
       h030->Fill( c->size );
       h031->Fill( c->charge );
 
@@ -489,7 +458,7 @@ int main( int argc, char **argv )
       double a2 = 0;
 
       // Check pixels inside the current cluster:
-      for( vector<pixel>::iterator px = c->vpix.begin(); px != c->vpix.end(); px++ ){
+      for( std::vector<pixel>::iterator px = c->vpix.begin(); px != c->vpix.end(); px++ ){
 	if( px->col < colmin ) colmin = px->col;
 	if( px->col > colmax ) colmax = px->col;
 	if( px->row < rowmin ) rowmin = px->row;
@@ -595,27 +564,29 @@ int main( int argc, char **argv )
   }
 
   double tsecs = (time-ttime1)/39936E3;
-  cout << endl;
-  cout << "time:    " << time-ttime1 << " clocks = " << tsecs << " s" << endl;
-  cout << "words:   " << nw << endl;
-  cout << "datas:   " << nd << " words" << " (" << 100.0*nd/nw << "%)" << endl;
-  cout << "good:    " << ng << " words" << " (" << 100.0*ng/max(1,nd) << "%)" << endl;
-  //cout << "nres:    " << nres << endl;
-  //cout << "ncal:    " << ncal << endl;
-  cout << "ntrig:  " << ntrig << " (" << ntrig/tsecs << " Hz)" << endl;
-  cout << "ndata:   " << ndata << " events" << endl;
-  cout << "nclus:   " << nclus << " (" << 100.0*nclus/max((unsigned int)1,ndata) << "%)" << endl;
-  cout << "npix:    " << npixel << " (" << 1.0*npixel/max((unsigned int)1,ndata) << "/ev)" << endl;
-  cout << endl;
-  cout << "nwrong:  " << nwrong << endl;
-  cout << "badadd:  " << badadd << " (" << (badadd*100.0)/max((unsigned int)1,npixel) << "%)" << endl;
-  cout << "nbig  :  " << nbig << endl;
-  //cout << "ntbmres: " << ntbmres << endl;
-  //cout << "ninfro:  " << ninfro << endl;
-  //cout << "nover:   " << nover << endl;
-  //cout << "data&trg:" << ndataetrig << endl;
-  //  cout << "ncor:    " << ncor << " headers" << endl;
-  cout << "invtime: " << invtime << endl;
+ std::cout << std::endl;
+ std::cout << "time:    " << time-ttime1 << " clocks = " << tsecs << " s" << std::endl;
+ std::cout << "words:   " << nw << std::endl;
+ std::cout << "datas:   " << nd << " words" << " (" << 100.0*nd/nw << "%)" << std::endl;
+ std::cout << "good:    " << ng << " words" << " (" << 100.0*ng/std::max(1,nd) << "%)" << std::endl;
+  //cout << "nres:    " << nres << std::endl;
+  //cout << "ncal:    " << ncal << std::endl;
+ std::cout << "ntrig:  " << ntrig << " (" << ntrig/tsecs << " Hz)" << std::endl;
+ std::cout << "ndata:   " << ndata << " events" << std::endl;
+ std::cout << "nclus:   " << nclus << " (" << 100.0*nclus/std::max((unsigned int)1,ndata) << "%)" << std::endl;
+ std::cout << "npix:    " << npixel << " (" << 1.0*npixel/std::max((unsigned int)1,ndata) << "/ev)" << std::endl;
+ std::cout << std::endl;
+ std::cout << "nwrong:  " << nwrong << std::endl;
+ std::cout << "badadd:  " << badadd << " (" << (badadd*100.0)/std::max((unsigned int)1,npixel) << "%)" << std::endl;
+ std::cout << "nbig  :  " << nbig << std::endl;
+  //cout << "ntbmres: " << ntbmres << std::endl;
+  //cout << "ninfro:  " << ninfro << std::endl;
+  //cout << "nover:   " << nover << std::endl;
+  //cout << "data&trg:" << ndataetrig << std::endl;
+  // std::cout << "ncor:    " << ncor << " headers" << std::endl;
+ std::cout << "invtime: " << invtime << std::endl;
+
+  std::cout << std::endl << "All histograms stored in " << histoName << std::endl;
 
   histoFile->Write();
   histoFile->Close();
@@ -674,7 +645,7 @@ std::vector<cluster> getHits(std::vector<CMSPixel::pixel> * pixbuff){
     }while( growing);
 
     // added all I could. determine position and append it to the list of clusters:
-    for( vector<pixel>::iterator p=c.vpix.begin();  p!=c.vpix.end();  p++){
+    for( std::vector<pixel>::iterator p=c.vpix.begin();  p!=c.vpix.end();  p++){
       double Qpix = p->vcal; // calibrated [keV]
       if( Qpix < 0 ) Qpix = 1; // DP 1.7.2012
       c.charge += Qpix;
@@ -693,7 +664,7 @@ std::vector<cluster> getHits(std::vector<CMSPixel::pixel> * pixbuff){
     else {
       c.col = (*c.vpix.begin()).col;
       c.row = (*c.vpix.begin()).row;
-      cout << "GetHits: cluster with zero charge" << endl;
+     std::cout << "GetHits: cluster with zero charge" << std::endl;
     }
 
     v.push_back(c);//add cluster to vector
@@ -733,7 +704,7 @@ gain::gain(Char_t* chipdir)//Constructor
 
   TString name(chipdir);
 
-  cout << "gain using " << name << endl;
+ std::cout << "gain using " << name << std::endl;
 
   ifstream ROCCAL(name);
   for( Int_t i = 0; i < 52; ++i ) {//col's
@@ -775,3 +746,137 @@ Double_t gain::GetVcal( Int_t col, Int_t row, Double_t Aout ){
   return v;
 }
 
+std::string ZeroPadNumber(int num, int len)
+{
+  std::ostringstream ss;
+  ss << std::setw( len ) << std::setfill( '0' ) << num;
+  return ss.str();
+}
+
+bool bookHistograms() {
+  try {
+    //                      name   title;xtit;ytit   nbins xmin xmax
+    h000 = new TH1D( "h000", "log words per event;log(event size [words]);triggers", 60, 0, 6 );
+    h001 = new TH1D( "h001", "words per event;event size [words];triggers", 101, -1, 201 );
+    h002 = new TH1D( "h002", "pixels per event;pixels/event;triggers", 100,  0.5,  100.5 );
+    h003 = new TH1D( "h003", "clusters per event;clusters/event;triggers", 100,  0.5, 100.5 );
+
+    t100  = new TH1D( "t100",  "time;t [s];triggers / s", 100, 0,  100 );
+    t300  = new TH1D( "t300",  "time;t [s];triggers / s", 300, 0,  300 );
+    t600  = new TH1D( "t600",  "time;t [s];triggers / s", 600, 0,  600 );
+    t1200 = new TH1D( "t1000", "time;t [s];triggers / 10 s", 120, 0, 1200 );
+    t2000 = new TH1D( "t2000", "time;t [s];triggers / 10 s", 200, 0, 2000 );
+    t4000 = new TH1D( "t4000", "time;t [s];triggers / 10 s", 400, 0, 4000 );
+
+    h004 = new TH1D( "h004", "one second;t [s];triggers / 10 ms", 100, 29, 30 );
+    h005 = new TH1D( "h005", "time mod 39;t mod 39 clocks;triggers", 39, -0.5, 38.5 );
+    h006 = new TH1D( "h006", "time between triggers;#Delta t [turns];triggers", 500, 0, 1000 );
+    h007 = new TH1D( "h007", "time between triggers;log_{10}(#Delta t [turns]);triggers", 400, 2, 6 );
+    h008 = new TH1D( "h008", "difftime mod 39;#Delta t mod 39 clocks;triggers", 39, -19.5, 19.5 );
+    h009 = new TH1D( "h009", "pixel per double column;pixels/DC;double columns",  50,  0.5,  50.5 );
+
+    d600  = new TH2D( "d600",  "dt mod 39 clocks vs time;time [s];dt mod 39 clocks", 140, 0,  700, 39, -19.5, 19.5 );
+    d1200 = new TH2D( "d1200", "dt mod 39 clocks vs time;time [s];dt mod 39 clocks", 130, 0, 1300, 39, -19.5, 19.5 );
+    d2000 = new TH2D( "d2000", "dt mod 39 clocks vs time;time [s];dt mod 39 clocks", 200, 0, 2000, 39, -19.5, 19.5 );
+    d4000 = new TH2D( "d4000", "dt mod 39 clocks vs time;time [s];dt mod 39 clocks", 400, 0, 4000, 39, -19.5, 19.5 );
+
+    i600  = new TProfile( "i600", "correct dt;time [s];fraction correct dt", 140, 0,  700, -0.5, 1.5 );
+    q600  = new TH2D( "q600",  "pixel charge vs time;time [s];pixel charge [ke]", 140, 0,  700, 100, 0, 20 );
+    p600  = new TProfile( "p600", "pixel charge vs time;time [s];<pixel charge> [ke]", 140, 0,  700, 0, 99 );
+    p10  = new TProfile( "p10", "pixel charge vs time;time [s];<pixel charge> [ke]", 100, 0, 10, 0, 99 );
+
+    //h011 = new TH1D( "h011", "UB;UB [ADC];events", 500, -400, 100 );
+    //h012 = new TH1D( "h012", "B;B [ADC];events", 200, -100, 100 );
+    //h013 = new TH1D( "h013", "LD;LD [ADC];events", 500, -100, 400 );
+    //h014 = new TH1D( "h014", "address;address;events", 16, -0.5, 15.5 );
+    h015 = new TH1D( "h015", "PH;PH [ADC];pixels", 256, -0.5, 255.5 );
+    h016 = new TH1D( "h016", "pixel charge;pixel charge [ke];pixels", 120, -10, 50 );
+    h216 = new TH1D( "h216", "pixel charge;pixel charge [ke];pixels", 100, 0, 25 );
+
+    h017  = new TProfile2D( "h017", "mean charge/pixel;col;row;<pixel charge> [ke]",52, -0.5, 51.5, 80, -0.5, 79.5, 0, 999 );
+    h018 = new TProfile( "h018", "mean pixel charge/col;col;<pixel charge> [ke]",52, -0.5, 51.5, 0, 999 );
+    h019 = new TProfile( "h019", "mean pixel charge/row;row;<pixel charge> [ke]",80, -0.5, 79.5, 0, 999 );
+
+    h020 = new TH1D( "h020", "dcol;double column;pixels", 26, -0.5, 25.5 );
+    h021 = new TH1D( "h021", "drow;double row;pixels", 217, -0.5, 216.5 );
+    h022 = new TH1D( "h022", "col;column;pixels", 52, -0.5, 51.5 );
+    h023 = new TH1D( "h023", "row;row;pixels",    80, -0.5, 79.5 );
+    h024 = new TH2D( "h024", "hit map;column;row;events", 52, -0.5, 51.5, 80, -0.5, 79.5 );
+    h025 = new TH2D( "h025", "charge map;column;row;sum charge [ke]", 52, -0.5, 51.5, 80, -0.5, 79.5 );
+    h026 = new TH1D( "h026", "Aout 2-pix clus;2-pix clus Aout [ADC];pixels", 500, -600, 1400 );
+    h027 = new TH1D( "h027", "Aout cal 2-pix clus;2-pix clus Aout [ke];pixels", 500, -10, 90 );
+
+    h030 = new TH1D( "h030", "cluster size;pixels/cluster;cluster", 21, -0.5, 20.5 );
+    h031 = new TH1D( "h031", "cluster charge;        cluster charge [ke];clusters", 200, 0, 100 );
+    h032 = new TH1D( "h032", "cluster charge;1-pixel cluster charge [ke];clusters", 200, 0, 100 );
+    h033 = new TH1D( "h033", "cluster charge;2-pixel cluster charge [ke];clusters", 200, 0, 100 );
+    h034 = new TH1D( "h034", "cluster charge;3-pixel cluster charge [ke];clusters", 200, 0, 200 );
+    h035 = new TH1D( "h035", "cluster charge;4-pixel cluster charge [ke];clusters", 200, 0, 200 );
+
+    h036 = new TH1D( "h036", "cluster col;cluster column;clusters", 52, -0.5, 51.5 );
+    h037 = new TH1D( "h037", "cluster row;cluster row;clusters",    80, -0.5, 79.5 );
+
+    h038  = new TProfile2D( "h038", "mean pix/clus;col;row;<pixel/cluster>",52, -0.5, 51.5, 80, -0.5, 79.5, 0, 999 );
+
+    h039 = new TH1D( "h039", "cluster charge / a;cluster charge / a [ke];clusters", 200, 0, 100 );
+
+    h040 = new TH1D( "h040", "col/clus;col/cluster;cluster", 11, -0.5, 10.5 );
+    h041 = new TH1D( "h041", "row/clus;row/cluster;cluster", 11, -0.5, 10.5 );
+    h042 = new TH1D( "h042", "2-pix cluster A1;2-pixel cluster A1 [ke];clusters", 200, 0, 100 );
+    h043 = new TH1D( "h043", "2-pix cluster A2;2-pixel cluster A2 [ke];clusters", 200, 0, 100 );
+    h044 = new TH1D( "h044", "eta 2-col cluster;2-col eta;cluster", 100, 0, 1 );
+    h045 = new TH1D( "h045", "eta 2-row cluster;2-row eta;cluster", 100, 0, 1 );
+    h046  = new TProfile( "h046", "eta vs col;col;<eta>",52, -0.5, 51.5, -1, 2 );
+    h047  = new TProfile( "h047", "eta vs row;row;<eta>",80, -0.5, 79.5, -1, 2 );
+
+    h051 = new TH1D( "h051", "cluster size fiducial;pixels/cluster;fiducial cluster", 21, -0.5, 20.5 );
+    h052 = new TH1D( "h052", "cluster charge fiducial;        cluster charge [ke];fiducial clusters", 200, 0, 100 );
+    h053 = new TH1D( "h053", "cluster charge fiducial;1-pixel cluster charge [ke];fiducial clusters", 200, 0, 100 );
+    h054 = new TH1D( "h054", "cluster charge fiducial;2-pixel cluster charge [ke];fiducial clusters", 200, 0, 100 );
+    h055 = new TH1D( "h055", "cluster charge fiducial;3-pixel cluster charge [ke];fiducial clusters", 200, 0, 200 );
+    h056 = new TH1D( "h056", "cluster charge fiducial;4-pixel cluster charge [ke];fiducial clusters", 200, 0, 200 );
+
+    h058 = new TProfile( "h058", "mean cluster charge vs col;col;<cluster charge> [ke]",52, -0.5, 51.5, 0, 99 );
+    h059 = new TProfile( "h059", "mean cluster charge / a vs col;col;<cluster charge / a> [ke]",52, -0.5, 51.5, 0, 99 );
+
+    h060 = new TH1D( "h060", "col/clus;col/cluster;cluster", 11, -0.5, 10.5 );
+    h061 = new TH1D( "h061", "row/clus;row/cluster;cluster", 11, -0.5, 10.5 );
+    h062 = new TH1D( "h062", "2-pix cluster A1;2-pixel cluster A1 [ke];clusters", 200, 0, 100 );
+    h063 = new TH1D( "h063", "2-pix cluster A2;2-pixel cluster A2 [ke];clusters", 200, 0, 100 );
+    h064 = new TH1D( "h064", "eta 2-col cluster;2-col eta;cluster", 100, 0, 1 );
+    h065 = new TH1D( "h065", "eta 2-row cluster;2-row eta;cluster", 100, 0, 1 );
+    h066 = new TH1D( "h066", "A2/Asum 2-row cluster;A2/(A1+A2);cluster", 100, 0, 0.5 );
+    h067 = new TH1D( "h067", "x 2-row cluster;x [um];cluster", 100, 50, 100 );
+    h068 = new TH1D( "h068", "x 2-row cluster;x [um];cluster", 100, 50, 100 );
+
+
+    h072 = new TProfile2D( "h072", "smallest pixel charge;col;row;smallest pixel charge [ke]",52, -0.5, 51.5, 80, -0.5, 79.5, 0, 10 );
+    h073 = new TProfile( "h073", "smallest pixel charge per col;col;smallest pixel charge [ke]",52, -0.5, 51.5, 0, 99 );
+    h074 = new TH1D( "h074", "smallest charge per pixel;smallest pixel charge [ke];pixels", 100, 0, 10 );
+    
+    h081 = new TH1D( "h081", "ph - ph0;ph - ph0 [ADC];pixel", 101, -50.5, 50.5 );
+    
+    h098 = new TProfile( "h098", "cluster yield;trigger;<events with clusters>", 100, 0, 100000, -1, 9 );
+    
+    c100  = new TProfile( "c100",  "yield vs time;t [s];<events with clusters>/1s", 100, 0, 100, -1, 9 );
+    c300  = new TProfile( "c300",  "yield vs time;t [s];<events with clusters>/3s", 100, 0, 300, -1, 9 );
+    c600  = new TProfile( "c600",  "yield vs time;t [s];<events with clusters>/5s", 140, 0, 700, -1, 9 );
+    c1200 = new TProfile( "c1200", "yield vs time;t [s];<events with clusters>/10s", 130, 0, 1300, -1, 9 );
+    c2000 = new TProfile( "c2000", "yield vs time;t [s];<events with clusters>/10s", 200, 0, 2000, -1, 9 );
+    c4000 = new TProfile( "c4000", "yield vs time;t [s];<events with clusters>/10s", 400, 0, 4000, -1, 9 );
+    
+    y600  = new TProfile( "y600",  "yield vs time;t [s];<events with clusters>/5s", 700*12.5, 0, 700, -1, 9 ); // DESY cycles, drop in all
+
+    // Book some additional ROOT histograms: h100-h151
+    for( int i = 0 ; i < 52 ; i++)  {
+      hcc[i] = new TH1D( Form( "h1%02i", i ), Form( "cluster charge for col %i  ; cluster charge [ke] ; entries", i), 100, 0, 100 );
+    }
+
+    std::cout << "Booked histograms." << std::endl;
+    return true;
+  }
+  catch(...) {
+    std::cout << "Unable to book histograms." << std::endl;
+    return false;
+  }
+}
