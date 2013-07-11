@@ -3,8 +3,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6 FATAL_ERROR)
 ########################################################
 
-option(BUILD_TOOLS "Build the CMSPixelDecoder testing tools" ON)
-option(BUILD_D2H "Build the d2h data conversion tools" ON)
+option(BUILD_TOOLS "Build the CMSPixelDecoder testing tools" OFF)
+option(BUILD_D2H "Build the d2h data conversion tools" OFF)
 
 # Library Version
 SET(CMSPIXELDECODER_LIB_VERSION "3.1.0")
