@@ -144,6 +144,9 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
 CMSPixelFileDecoder::CMSPixelFileDecoder(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile)
   : statistics(), evt(), theROC(0), mtbStream(), cmstime(0), addressLevels()
 {
+
+  LOG(logDEBUG) << "Preparing a file decoder instance...";
+
   // Make the roc type available:
   theROC = ROCTYPE;
   
@@ -572,7 +575,7 @@ bool CMSPixelEventDecoder::convertDcolToCol(int dcol, int pix, int & col, int & 
 
 CMSPixelEventDecoderDigital::CMSPixelEventDecoderDigital(unsigned int rocs, int flags, uint8_t ROCTYPE) : CMSPixelEventDecoder(rocs, flags, ROCTYPE)
 {
-  LOG(logDEBUG) << "Preparing a digital decoder instance...";
+  LOG(logDEBUG) << "Preparing a digital event decoder instance, ROC type " << ROCTYPE << "...";
   // Loading constants and flags:
   LOG(logDEBUG2) << "Loading constants...";
   load_constants(flags);
@@ -725,7 +728,8 @@ int CMSPixelEventDecoderDigital::decode_hit(std::vector< uint16_t > data, unsign
 
 CMSPixelEventDecoderAnalog::CMSPixelEventDecoderAnalog(unsigned int rocs, int flags, uint8_t ROCTYPE, levelset addLevels) : CMSPixelEventDecoder(rocs, flags, ROCTYPE), addressLevels()
 {
-  LOG(logDEBUG) << "Preparing an analog decoder instance...";
+  LOG(logDEBUG) << "Preparing an analog event decoder instance, ROC type " << ROCTYPE << "...";
+
   // Loading constants:
   LOG(logDEBUG2) << "Loading constants...";
   load_constants(flags);
