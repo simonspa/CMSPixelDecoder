@@ -1,0 +1,10 @@
+build
+bin
+lib
+data
+*.log
+*.root
+unit_tests
+tentative_dec
+stat_tool
+mc_background
