@@ -38,22 +38,24 @@ void CMSPixelStatistics::update(CMSPixelStatistics stats) {
 }
 
 std::string CMSPixelStatistics::get() {
-  // FIXME print statistics into string here...
-  return "";
+  std::stringstream os;
+  os << std::endl;
+  os << "    Data blocks read : " << std::setw(8) << data_blocks << std::endl;
+
+  os << "    TB Trigger Marker: " << std::setw(8) << head_trigger << std::endl;
+  os << "    TB Data Marker:    " << std::setw(8) << head_data << std::endl;
+
+  os << "    Events empty:      " << std::setw(8) << evt_empty << std::endl;
+  os << "    Events valid:      " << std::setw(8) << evt_valid << std::endl;
+  os << "    Events invalid:    " << std::setw(8) << evt_invalid << std::endl;
+
+  os << "    Pixels valid:      " << std::setw(8) << pixels_valid << std::endl;
+  os << "    Pixels invalid:    " << std::setw(8) << pixels_invalid;
+  return os.str();
 }
 
 void CMSPixelStatistics::print() {
-  LOG(logSUMMARY) << "Data blocks read : " << std::setw(8) <<  data_blocks;
-
-  LOG(logSUMMARY) << "TB Trigger Marker: " << std::setw(8) <<  head_trigger;
-  LOG(logSUMMARY) << "TB Data Marker:    " << std::setw(8) <<  head_data;
-
-  LOG(logSUMMARY) << "  Events empty:    " << std::setw(8) <<  evt_empty;
-  LOG(logSUMMARY) << "  Events valid:    " << std::setw(8) <<  evt_valid;
-  LOG(logSUMMARY) << "  Events invalid:  " << std::setw(8) <<  evt_invalid;
-
-  LOG(logSUMMARY) << "    Pixels valid:  " << std::setw(8) <<  pixels_valid;
-  LOG(logSUMMARY) << "    Pixels invalid:" << std::setw(8) <<  pixels_invalid;
+  LOG(logSUMMARY) << get();
 }
 
 bool CMSPixelFileDecoderPSI_ATB::process_rawdata(std::vector< uint16_t > * data)
