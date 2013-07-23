@@ -505,7 +505,7 @@ int CMSPixelEventDecoder::pre_check_sanity(std::vector< uint16_t > * data, unsig
 
   // Ugly hack for single analog/xdb chip readout without TBM or emulator: we have some testboard trailer...
   if((theROC & ROC_PSI46V2 || theROC & ROC_PSI46XDB) && !(flag & FLAG_HAVETBM) && noOfROC == 1) {
-    data->erase(data->end() - 6,data->end());
+    data->erase(data->end() - 4,data->end());
     LOG(logDEBUG3) << "FIXME(singleAnalogROC): Removed some trailers.";
   }
 
