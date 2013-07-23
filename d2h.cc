@@ -107,6 +107,9 @@ int main( int argc, char **argv )
     // Allow all (also corrupt) ROC headers:
     else if( !strcmp( argv[i], "-all" ) ) flags |= FLAG_ALLOW_CORRUPT_ROC_HEADERS;
 
+    // Specify decoding flags by hand:
+    else if( !strcmp( argv[i], "-flg" ) ) flags |= atoi(argv[++i]);
+
     // Address Parameters:
     else if( !strcmp( argv[i], "-add" ) ) address = argv[++i];
 
