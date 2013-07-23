@@ -166,9 +166,9 @@ bool test_analog_single()
   // REFERENCE:
   CMSPixelStatistics ref;
   ref.head_data = ref.head_trigger = 109495;
-  ref.evt_empty = 84265; //77665;
-  ref.evt_valid = 25229; //31829;
-  ref.pixels_valid = 29954; //37105;
+  ref.evt_empty = 75595; //77665;
+  ref.evt_valid = 33899; //31829;
+  ref.pixels_valid = 39973; //37105;
   ref.evt_invalid = 0;
   ref.pixels_invalid = 8718; //11586;
   double ref_timing = 0.26;
