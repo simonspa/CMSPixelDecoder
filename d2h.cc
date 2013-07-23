@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
 #include <string>
 #include <iostream>
 #include <iomanip>
@@ -39,9 +40,26 @@ using namespace CMSPixel;
 
 int flags;
 int fCluCut = 1; // clustering: 1 = no gap (15.7.2012)
+CMSPixelFileDecoder * decoder;
+
+
+void sig_handler(int s){
+  std::cout << "Caught signal " << s << std::endl;
+  delete decoder;
+  exit(0);
+}
 
 int main( int argc, char **argv )
 {
+
+  struct sigaction sigIntHandler;
+
+   sigIntHandler.sa_handler = sig_handler;
+   sigemptyset(&sigIntHandler.sa_mask);
+   sigIntHandler.sa_flags = 0;
+
+   sigaction(SIGINT, &sigIntHandler, NULL);
+
   int run = 0;
   std::string path;
 
@@ -54,6 +72,7 @@ int main( int argc, char **argv )
   
   std::string fileName;
   std::string histoName;
+  std::string address = "addressParameters.dat";
 
   Log::ReportingLevel() = Log::FromString("SUMMARY");
 
@@ -87,6 +106,9 @@ int main( int argc, char **argv )
 
     // Allow all (also corrupt) ROC headers:
     else if( !strcmp( argv[i], "-all" ) ) flags |= FLAG_ALLOW_CORRUPT_ROC_HEADERS;
+
+    // Address Parameters:
+    else if( !strcmp( argv[i], "-add" ) ) address = argv[++i];
 
     // Specify chip number
     else if( !strcmp( argv[i], "-c" ) ) {
@@ -131,8 +153,7 @@ int main( int argc, char **argv )
   else roctype = ROC_PSI46DIGV2;
  std::cout << "roctype: " << (int)roctype << std::endl;
 
-  CMSPixelFileDecoder * decoder;
-  decoder = new CMSPixelFileDecoderPSI_ATB(fileName.c_str(), nroc, flags, roctype, "addressParameters.dat");
+  decoder = new CMSPixelFileDecoderPSI_ATB(fileName.c_str(), nroc, flags, roctype, address.c_str());
 
   // gain file:
   double amax[52][80];
