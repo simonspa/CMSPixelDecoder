@@ -92,6 +92,12 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
   // Byte c: Timestamp (lower 8b)
   // Byte d: Bits 1-0 are phase of the trigger pulse; bits 3-2 are phase of the received data
 
+  // FIXME Bride Board Revision 3 has a slightly trailer data format:
+  // 15 byte trailer:
+  // First 13 bytes unchanged.
+  // Byte 14: upper four bits: data phase; lower four bits: trigger phase
+  // Byte 15: lower four bits: event status (good event == 7); upper four bits: reserved
+
   // Catch strange events with corrupted length or so:
   try {
 
