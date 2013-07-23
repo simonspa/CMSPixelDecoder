@@ -504,10 +504,9 @@ int CMSPixelEventDecoder::pre_check_sanity(std::vector< uint16_t > * data, unsig
   length = L_GRANULARITY*data->size();
 
   // Ugly hack for single analog/xdb chip readout without TBM or emulator: we have some testboard trailer...
-  //  if(0) {
   if((theROC & ROC_PSI46V2 || theROC & ROC_PSI46XDB) && !(flag & FLAG_HAVETBM) && noOfROC == 1) {
     data->erase(data->end() - 6,data->end());
-    LOG(logDEBUG3) << "FIXME(singleAnaROC): Removed some trailers.";
+    LOG(logDEBUG3) << "FIXME(singleAnalogROC): Removed some trailers.";
   }
 
   // Find the start position with the first ROC header (maybe there are idle patterns before...)
@@ -519,7 +518,7 @@ int CMSPixelEventDecoder::pre_check_sanity(std::vector< uint16_t > * data, unsig
       break;
     }
   }
-    
+
   if(!found) {
     LOG(logERROR) << "Event contains no valid ROC header: " << print_data(data);
     statistics.evt_invalid++;
@@ -583,7 +582,7 @@ bool CMSPixelEventDecoder::convertDcolToCol(int dcol, int pix, int & col, int & 
 
 CMSPixelEventDecoderDigital::CMSPixelEventDecoderDigital(unsigned int rocs, int flags, uint8_t ROCTYPE) : CMSPixelEventDecoder(rocs, flags, ROCTYPE)
 {
-  LOG(logDEBUG) << "Preparing a digital event decoder instance, ROC type " << ROCTYPE << "...";
+  LOG(logDEBUG) << "Preparing a digital event decoder instance, ROC type " << static_cast<int>(ROCTYPE) << "...";
   // Loading constants and flags:
   LOG(logDEBUG2) << "Loading constants...";
   load_constants(flags);
@@ -736,7 +735,7 @@ int CMSPixelEventDecoderDigital::decode_hit(std::vector< uint16_t > data, unsign
 
 CMSPixelEventDecoderAnalog::CMSPixelEventDecoderAnalog(unsigned int rocs, int flags, uint8_t ROCTYPE, levelset addLevels) : CMSPixelEventDecoder(rocs, flags, ROCTYPE), addressLevels()
 {
-  LOG(logDEBUG) << "Preparing an analog event decoder instance, ROC type " << ROCTYPE << "...";
+  LOG(logDEBUG) << "Preparing an analog event decoder instance, ROC type " << static_cast<int>(ROCTYPE) << "...";
 
   // Loading constants:
   LOG(logDEBUG2) << "Loading constants...";
@@ -758,6 +757,16 @@ bool CMSPixelEventDecoderAnalog::find_roc_header(std::vector< uint16_t > data, u
   // Did we reach max number of ROCs read in from address levels file?
   if(roc >= addressLevels.ROC.size()) return false;
     
+  // Some analog single ROCs seem to produce no ROC header at all. Hard setting the position with the flag below:
+  if((theROC & ROC_PSI46V2 || theROC & ROC_PSI46XDB) && !(flag & FLAG_HAVETBM) && (flag & FLAG_OVERWRITE_ROC_HEADER_POS)) {
+    if(*pos == 1) {
+      LOG(logDEBUG1) << "Assumed corrupt ROC header ("<< std::setw(5) << sign(data[*pos]) << " " << std::setw(5) << sign(data[*pos+1]) << ") after " << std::dec << *pos << " words.";
+      *pos += L_ROC_HEADER;
+      return true;
+    }
+    else return false;
+  }
+
   // Corrupt ROC header for single analog ROCs w/o TBM: somehow this looks like Black, UltraBlack:
   if ((flag & FLAG_ALLOW_CORRUPT_ROC_HEADERS) && findBin(sign(data[*pos]),2,addressLevels.ROC[roc].level) == 1 
       && findBin(sign(data[*pos+1]),2,addressLevels.ROC[roc].level) == 0 ) {

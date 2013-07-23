@@ -25,6 +25,7 @@
 #define FLAG_HAVETBM 2
 #define FLAG_12BITS_PER_WORD 4
 #define FLAG_16BITS_PER_WORD 8
+#define FLAG_OVERWRITE_ROC_HEADER_POS 16
 
 // Decoder errors:
 #define DEC_ERROR_EMPTY_EVENT -1
