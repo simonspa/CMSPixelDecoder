@@ -26,6 +26,7 @@ int main(int argc, char* argv[]) {
   std::vector<pixel> * singleevt = new std::vector<pixel>;
   std::vector<uint16_t> singledat;
   CMSPixelEventDecoder * singledec;
+  int return_value = 0;
 
 
   std::cout << "PSI46 Analog:\n";
@@ -44,9 +45,16 @@ int main(int argc, char* argv[]) {
   singledat.push_back(0x0250);
   singledat.push_back(0x0014);
 
+  singledat.push_back(0x40ba);
+  singledat.push_back(0x0d12);
+  singledat.push_back(0x0d12);
+  singledat.push_back(0x1234);
+  singledat.push_back(0x0345);
+  singledat.push_back(0x0014);
+
   int flaggen = FLAG_ALLOW_CORRUPT_ROC_HEADERS;
   singledec = new CMSPixelEventDecoderAnalog(1,flaggen,ROC_PSI46V2,addressLevels);
-  std::cout << "Return: " << singledec->get_event(singledat,singleevt) << std::endl;
+  std::cout << "Return: " << (return_value += singledec->get_event(singledat,singleevt)) << std::endl;
   delete singledec;
   singledat.clear();
 
@@ -64,7 +72,7 @@ int main(int argc, char* argv[]) {
 
   flaggen = FLAG_16BITS_PER_WORD | FLAG_ALLOW_CORRUPT_ROC_HEADERS;
   singledec = new CMSPixelEventDecoderDigital(8,flaggen,ROC_PSI46DIG);
-  std::cout << "Return: " << singledec->get_event(singledat,singleevt) << std::endl;
+  std::cout << "Return: " << (return_value += singledec->get_event(singledat,singleevt)) << std::endl;
   delete singledec;
   singledat.clear();
 
@@ -88,7 +96,7 @@ int main(int argc, char* argv[]) {
 
   flaggen = FLAG_ALLOW_CORRUPT_ROC_HEADERS;
   singledec = new CMSPixelEventDecoderDigital(1,flaggen,ROC_PSI46DIG);
-  std::cout << "Return: " << singledec->get_event(singledat,singleevt) << std::endl;
+  std::cout << "Return: " << (return_value += singledec->get_event(singledat,singleevt)) << std::endl;
   delete singledec;
   singledat.clear();
 
@@ -102,7 +110,7 @@ int main(int argc, char* argv[]) {
 
   flaggen = FLAG_12BITS_PER_WORD | FLAG_ALLOW_CORRUPT_ROC_HEADERS;
   singledec = new CMSPixelEventDecoderDigital(1,flaggen,ROC_PSI46DIG);
-  std::cout << "Return: " << singledec->get_event(singledat,singleevt) << std::endl;
+  std::cout << "Return: " << (return_value += singledec->get_event(singledat,singleevt)) << std::endl;
   delete singledec;
   singledat.clear();
 
@@ -114,18 +122,28 @@ int main(int argc, char* argv[]) {
 
   flaggen = FLAG_16BITS_PER_WORD | FLAG_ALLOW_CORRUPT_ROC_HEADERS;
   singledec = new CMSPixelEventDecoderDigital(1,flaggen,ROC_PSI46DIG);
-  std::cout << "Return: " << singledec->get_event(singledat,singleevt) << std::endl;
+  std::cout << "Return: " << (return_value += singledec->get_event(singledat,singleevt)) << std::endl;
   delete singledec;
   singledat.clear();
 
   delete singleevt;
 
+  if(return_value != 0) {
+    std::cout << "Unit testing of single event decoding failed!" << std::endl;
+    return 1;
+  }
+  else std::cout << "Unit testing of single event decoding SUCCEEDED." << std::endl;
+
   // ###################################################################################
 
-  if(!unit_tests()) std::cout << "Unit testing failed!" << std::endl;
-  else std::cout << "Unit testing successfully completed." << std::endl;
-
-  return 0;
+  if(!unit_tests()) {
+    std::cout << "Unit testing failed!" << std::endl;
+    return 1;
+  }
+  else {
+    std::cout << "Unit testing successfully completed." << std::endl;
+    return 0;
+  }
 }
 
 bool compare(CMSPixelStatistics reference, CMSPixelStatistics measurement)
@@ -164,13 +182,55 @@ bool test_analog_single()
     if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-  std::cout << "     Timing: " << elapsed_secs << "sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
+  std::cout << "     Timing: " << elapsed_secs << " sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
   delete evt;
-  dec->statistics.print();
 
   // Timing check:
   if(elapsed_secs <= 0.92*ref_timing || elapsed_secs >= 1.08*ref_timing) {
-    std::cout << "     Timing requirements NOT met!" << std::endl;
+    std::cout << "     Timing requirements NOT met! (should be " << ref_timing << " sec)" << std::endl;
+  }
+
+  // Decoding check:
+  if(!compare(ref,dec->statistics)) {
+    delete dec;
+    return false;
+  }
+  else {
+    delete dec;
+    std::cout << "SUCCEEDED." << std::endl;
+    return true;
+  }
+}
+
+bool test_analog_single_tb()
+{
+  std::cout << "Unit testing: Analog Single ROC, DESY Testbeam settings" << std::endl;
+
+  // REFERENCE:
+  CMSPixelStatistics ref;
+  ref.head_data = ref.head_trigger = 165243;
+  ref.evt_empty = 91815;
+  ref.evt_valid = 73427;
+  ref.pixels_valid = 103705;
+  ref.evt_invalid = 0;
+  ref.pixels_invalid = 0;
+  double ref_timing = 0.26;
+
+  std::vector<pixel> * evt = new std::vector<pixel>;
+  int64_t timestamp;
+  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB("data/mtb.bin.ana.tb",1,FLAG_OVERWRITE_ROC_HEADER_POS,ROC_PSI46V2,"data/addressParameters.dat.single.tb");
+
+  clock_t begin = clock();
+  while(1)
+    if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
+  clock_t end = clock();
+  double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+  std::cout << "     Timing: " << elapsed_secs << "sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
+  delete evt;
+
+  // Timing check:
+  if(elapsed_secs <= 0.92*ref_timing || elapsed_secs >= 1.08*ref_timing) {
+    std::cout << "     Timing requirements NOT met! (should be " << ref_timing << " sec)" << std::endl;
   }
 
   // Decoding check:
@@ -208,13 +268,12 @@ bool test_digital_single()
     if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-  std::cout << "     Timing: " << elapsed_secs << "sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
+  std::cout << "     Timing: " << elapsed_secs << " sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
   delete evt;
-  dec->statistics.print();
 
   // Timing check:
   if(elapsed_secs <= 0.92*ref_timing || elapsed_secs >= 1.08*ref_timing) {
-    std::cout << "     Timing requirements NOT met!" << std::endl;
+    std::cout << "     Timing requirements NOT met! (should be " << ref_timing << " sec)" << std::endl;
   }
 
   // Decoding check:
@@ -252,13 +311,12 @@ bool test_analog_module()
     if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-  std::cout << "     Timing: " << elapsed_secs << "sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
+  std::cout << "     Timing: " << elapsed_secs << " sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
   delete evt;
-  dec->statistics.print();
 
   // Timing check:
   if(elapsed_secs <= 0.92*ref_timing || elapsed_secs >= 1.08*ref_timing) {
-    std::cout << "     Timing requirements NOT met!" << std::endl;
+    std::cout << "     Timing requirements NOT met! (should be " << ref_timing << " sec)" << std::endl;
   }
 
   // Decoding check:
@@ -297,13 +355,12 @@ bool test_telescope_psi()
     if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-  std::cout << "     Timing: " << elapsed_secs << "sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
+  std::cout << "     Timing: " << elapsed_secs << " sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
   delete evt;
-  dec->statistics.print();
 
   // Timing check:
   if(elapsed_secs <= 0.92*ref_timing || elapsed_secs >= 1.08*ref_timing) {
-    std::cout << "     Timing requirements NOT met: " << ref_timing << "sec." << std::endl;
+    std::cout << "     Timing requirements NOT met! (should be " << ref_timing << " sec)" << std::endl;
   }
 
   // Decoding check:
@@ -343,13 +400,12 @@ bool test_telescope_ral()
     if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
-  std::cout << "     Timing: " << elapsed_secs << "sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
+  std::cout << "     Timing: " << elapsed_secs << " sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
   delete evt;
-  dec->statistics.print();
 
   // Timing check:
   if(elapsed_secs <= 0.95*ref_timing || elapsed_secs >= 1.05*ref_timing) {
-    std::cout << "     Timing requirements NOT met!" << std::endl;
+    std::cout << "     Timing requirements NOT met! (should be " << ref_timing << " sec)" << std::endl;
   }
 
   // Decoding check:
@@ -372,6 +428,7 @@ bool unit_tests() {
   Log::ReportingLevel() = Log::FromString("SUMMARY");
 
   if(!test_analog_single()) return false;
+  if(!test_analog_single_tb()) return false;
   if(!test_digital_single()) return false;
 
   if(!test_analog_module()) return false;
