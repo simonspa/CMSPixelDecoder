@@ -124,7 +124,6 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
       ((time0<<16)&0xff0000) | 
       ((time0)&0xff00) | 
       ((time2>>8)&0xff);
-    // cmstime = ((static_cast<uint64_t>(rawdata->at(stamp_pos+1))<<32)&0xff00000000) |  ((rawdata->at(stamp_pos+1)<<16)&0xff000000) | ((rawdata->at(stamp_pos)<<16)&0xff0000) | ((rawdata->at(stamp_pos))&0xff00) | ((rawdata->at(stamp_pos+2)>>8)&0xff);
   }
   else {
     cmstime = ((time2<<24)&0xff00000000LLU) | 
@@ -406,7 +405,7 @@ CMSPixelEventDecoder::~CMSPixelEventDecoder() {
   // Nothing to do.
 }
 
-int CMSPixelEventDecoder::get_event(std::vector< uint16_t > data, std::vector<pixel> * evt) {
+int CMSPixelEventDecoder::get_event(std::vector< uint16_t > & data, std::vector<pixel> * evt) {
 
   LOG(logDEBUG) << "Start decoding.";
   LOG(logDEBUG1) << "Received " << 16*data.size() << " bits of event data.";

@@ -137,7 +137,7 @@ namespace CMSPixel {
   public:
     CMSPixelEventDecoder(unsigned int rocs, int flags, uint8_t ROCTYPE);
     virtual ~CMSPixelEventDecoder();
-    int get_event(std::vector< uint16_t > data, std::vector<pixel> * evt);
+    int get_event(std::vector< uint16_t > & data, std::vector<pixel> * evt);
     CMSPixelStatistics statistics;
 
   protected:
