@@ -398,13 +398,8 @@ std::string CMSPixelFileDecoder::print_addresslevels(levelset addLevels) {
 
 
 CMSPixelEventDecoder::CMSPixelEventDecoder(unsigned int rocs, int flags, uint8_t ROCTYPE)
-  : statistics(), L_HEADER(0), L_TRAILER(0), L_EMPTYEVT(0), L_GRANULARITY(0), L_HIT(0), L_ROC_HEADER(0), L_HUGE_EVENT(0), flag(0), noOfROC(0), theROC(0)
+  : statistics(), L_HEADER(0), L_TRAILER(0), L_EMPTYEVT(0), L_GRANULARITY(0), L_HIT(0), L_ROC_HEADER(0), L_HUGE_EVENT(0), flag(flags), noOfROC(rocs), theROC(ROCTYPE)
 {
-
-  flag = flags;
-  noOfROC = rocs;
-  theROC = ROCTYPE;
-
 }
 
 CMSPixelEventDecoder::~CMSPixelEventDecoder() {

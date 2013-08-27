@@ -117,7 +117,6 @@ namespace CMSPixel {
     // Events containing only some invalid pixels are still delivered, only return value is set.
     uint32_t pixels_invalid;
 
-
     //    int data_notrailer;
     //    int data_huge;
     //    int data_norocs;
@@ -145,9 +144,9 @@ namespace CMSPixel {
     bool convertDcolToCol(int dcol, int pix, int & col, int & row);
 
     unsigned int L_HEADER, L_TRAILER, L_EMPTYEVT, L_GRANULARITY, L_HIT, L_ROC_HEADER, L_HUGE_EVENT;
-    int flag;
-    unsigned int noOfROC;
-    uint8_t theROC;
+    const int flag;
+    const unsigned int noOfROC;
+    const uint8_t theROC;
 
   private:
     // Purely virtual, to be implemented in the child classes (digital/analog):
