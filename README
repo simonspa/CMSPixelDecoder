@@ -98,6 +98,7 @@
                to fully use the available data length by filling all 16bits of the
 	       short. Use this flag to set for single event decoding of IPBus data.
 	       when using the CMSPixelFileDecoderRAL the flag is set automatically.
+  FLAG_OVERWRITE_ROC_HEADER_POS - 
   
 * Statistics and returns
   CMSPixelDecoder collects decoding statistics during the run. These can either
