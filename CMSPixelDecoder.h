@@ -1,6 +1,6 @@
 // Version: $Id: CMSPixelDecoder.h 2371 2013-02-14 08:49:35Z spanns $
 /*========================================================================*/
-/*          CMSPixel Decoder v3.0                                         */
+/*          CMSPixel Decoder v3.1                                         */
 /*          Author: Simon Spannagel (s.spannagel@cern.ch)                 */
 /*          Created       23 feb 2012                                     */
 /*          Last modified 29 apr 2013                                     */
@@ -13,7 +13,7 @@
 #include <vector>
 #include <map>
 #include <iostream>
-#include <inttypes.h>
+#include <stdint.h>
 #include <sstream>
 #include <string>
 #include <stdio.h>

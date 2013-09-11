@@ -1,6 +1,6 @@
 // Version: $Id: CMSPixelDecoder.cc 2371 2013-02-14 08:49:35Z spanns $
 /*========================================================================*/
-/*          CMSPixel Decoder v3.0                                         */
+/*          CMSPixel Decoder v3.1                                         */
 /*          Author: Simon Spannagel (s.spannagel@cern.ch)                 */
 /*          Created       23 feb 2012                                     */
 /*          Last modified 29 apr 2013                                     */
@@ -8,15 +8,15 @@
 
 #include "CMSPixelDecoder.h"
 
-#include <string.h>
-#include <stdlib.h>
+#include <cstring>
+#include <string>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <iomanip>
 #include <vector>
-#include <math.h>
+#include <cmath>
 #include <map>
-#include <inttypes.h>
 
 using namespace CMSPixel;
 
@@ -373,7 +373,7 @@ bool CMSPixelFileDecoder::read_address_levels(const char* levelsFile, unsigned i
 std::string CMSPixelFileDecoder::print_addresslevels(levelset addLevels) {
   std::stringstream os;
   os << std::endl << "STATUS TBM    header: ";
-  std::vector<int>::iterator it;
+  std::vector<int>::const_iterator it;
   for(it = addLevels.TBM.level.begin(); it < addLevels.TBM.level.end(); ++it)
     os << std::setw(5) << static_cast<int>(*it) << " ";
 
