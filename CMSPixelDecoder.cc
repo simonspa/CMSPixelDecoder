@@ -58,18 +58,16 @@ void CMSPixelStatistics::print() {
   LOG(logSUMMARY) << get();
 }
 
-bool CMSPixelFileDecoderPSI_ATB::process_rawdata(std::vector< uint16_t > * data)
+bool CMSPixelFileDecoderPSI_ATB::process_rawdata(std::vector< uint16_t > * /*data*/)
 {
   // Currently nothing to do here...
-  (void)data;
   LOG(logDEBUG4) << "No need for raw data processing with PSI ATB.";
   return true;
 }
 
-bool CMSPixelFileDecoderPSI_DTB::process_rawdata(std::vector< uint16_t > * data) 
+bool CMSPixelFileDecoderPSI_DTB::process_rawdata(std::vector< uint16_t > * /*data*/) 
 {
   // Currently nothing to do here...
-  (void)data;
   LOG(logDEBUG4) << "No need for raw data processing with PSI DTB.";
   return true;
 }
@@ -148,6 +146,7 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
   }
   catch(...) {
     LOG(logERROR) << "Invalid IPBus event detected.";
+    statistics.evt_invalid++;
     return false;
   }
   return true;

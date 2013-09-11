@@ -433,7 +433,7 @@ bool test_telescope_ral2()
   ref.evt_empty = 95080;
   ref.evt_valid = 61037;
   ref.pixels_valid = 440936;
-  ref.evt_invalid = 0;
+  ref.evt_invalid = 5;
   ref.pixels_invalid = 3;
 
   double ref_timing = 10.7;
