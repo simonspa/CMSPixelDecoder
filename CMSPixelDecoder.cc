@@ -83,16 +83,17 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
   // 1: 32 bit Event number from readout block (should always be contiguous)
   // 2: 32 bit Event body length in bytes ('n'; need not be aligned to whole words)
   // 3: 32 bit Event type / run number (programmable, 0xDEADBEEF in the example)
-  // 4 -: Pixel data, followed by 14 byte trailer
+  // 4 -: Pixel data, followed by 14/15 byte trailer
   //
-  // The content of the trailer is:
+  // OLD Trailer Format with 14bytes:
+  // (use FLAG_OLD_RAL_FORMAT to decode)
   // Bytes 3-0: Trigger number
   // Bytes 7-4: Token number
   // Bytes b-8: Timestamp (most significant 32b of 40b word, 1us ticks)
   // Byte c: Timestamp (lower 8b)
   // Byte d: Bits 1-0 are phase of the trigger pulse; bits 3-2 are phase of the received data
-
-  // FIXME Bride Board Revision 3 has a slightly trailer data format:
+  //
+  // NEW Trailer format with 15bytes:
   // 15 byte trailer:
   // First 13 bytes unchanged.
   // Byte 14: upper four bits: data phase; lower four bits: trigger phase
@@ -101,44 +102,48 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
   // Catch strange events with corrupted length or so:
   try {
 
-  // We need to swap the endianness since the data block comes in scrumbled 8bit-blocks:
-  // D | C | B | A  ->  A | B | C | D
-  uint32_t event_length = (((rawdata->at(1)<<24)&0xff000000) | 
-			   ((rawdata->at(1)<<8)&0xff0000) | 
-			   ((rawdata->at(0)<<8)&0xff00) | 
-			   ((rawdata->at(0)>>8)&0xff)) - 14;
-  
-  LOG(logDEBUG4) << "IPBus event length: " << event_length << " bytes.";
-  
-  // Read the timestamp from the trailer:
-  uint16_t stamp_pos = (event_length/2) + 8;
+    // We need to swap the endianness since the data block comes in scrumbled 8bit-blocks:
+    // D | C | B | A  ->  A | B | C | D
+    uint32_t event_length = (((rawdata->at(1)<<24)&0xff000000) | 
+			     ((rawdata->at(1)<<8)&0xff0000) | 
+			     ((rawdata->at(0)<<8)&0xff00) | 
+			     ((rawdata->at(0)>>8)&0xff));
 
-  uint64_t time2 = rawdata->at(stamp_pos+2);
-  uint64_t time1 = rawdata->at(stamp_pos+1);
-  uint64_t time0 = rawdata->at(stamp_pos);
+    // Old dataformat has only 14bytes trailer, new format has 15bytes:
+    if(ral_flags & FLAG_OLD_RAL_FORMAT) event_length -= 14;
+    else event_length -= 15;
+  
+    LOG(logDEBUG4) << "IPBus event length: " << event_length << " bytes.";
+  
+    // Read the timestamp from the trailer:
+    uint16_t stamp_pos = (event_length/2) + 8;
 
-  if(event_length%2 == 0) {
+    uint64_t time2 = rawdata->at(stamp_pos+2);
+    uint64_t time1 = rawdata->at(stamp_pos+1);
+    uint64_t time0 = rawdata->at(stamp_pos);
+
+    if(event_length%2 == 0) {
     
-    cmstime = ((time1<<32)&0xff00000000LLU) | 
-      ((time1<<16)&0xff000000) | 
-      ((time0<<16)&0xff0000) | 
-      ((time0)&0xff00) | 
-      ((time2>>8)&0xff);
-  }
-  else {
-    cmstime = ((time2<<24)&0xff00000000LLU) | 
-      ((time1<<24)&0xff000000) | 
-      ((time1<<8)&0xff0000) | 
-      ((time0<<8)&0xff00) | 
-      ((time2)&0xff);
-  }
+      cmstime = ((time1<<32)&0xff00000000LLU) | 
+	((time1<<16)&0xff000000) | 
+	((time0<<16)&0xff0000) | 
+	((time0)&0xff00) | 
+	((time2>>8)&0xff);
+    }
+    else {
+      cmstime = ((time2<<24)&0xff00000000LLU) | 
+	((time1<<24)&0xff000000) | 
+	((time1<<8)&0xff0000) | 
+	((time0<<8)&0xff00) | 
+	((time2)&0xff);
+    }
 
-  LOG(logDEBUG4) << "IPBus timestamp: " << std::hex << cmstime << std::dec << " = " << cmstime << "us.";
+    LOG(logDEBUG4) << "IPBus timestamp: " << std::hex << cmstime << std::dec << " = " << cmstime << "us.";
 
-  // cut first 8 bytes from header:
-  rawdata->erase(rawdata->begin(),rawdata->begin()+4);
-  //  and last 14 bytes plus the padding from trailer:
-  rawdata->erase(rawdata->begin() + (event_length/2 + event_length%2),rawdata->end());
+    // cut first 8 bytes from header:
+    rawdata->erase(rawdata->begin(),rawdata->begin()+4);
+    //  and last 14/15 bytes plus the padding from trailer:
+    rawdata->erase(rawdata->begin() + (event_length/2 + event_length%2),rawdata->end());
 
   }
   catch(...) {

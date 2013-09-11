@@ -26,6 +26,7 @@
 #define FLAG_12BITS_PER_WORD 4
 #define FLAG_16BITS_PER_WORD 8
 #define FLAG_OVERWRITE_ROC_HEADER_POS 16
+#define FLAG_OLD_RAL_FORMAT 32
 
 // Decoder errors:
 #define DEC_ERROR_EMPTY_EVENT -1
@@ -282,9 +283,10 @@ namespace CMSPixel {
 
   class CMSPixelFileDecoderRAL : public CMSPixelFileDecoder {
   public:
-  CMSPixelFileDecoderRAL(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE) : CMSPixelFileDecoder(FileName, rocs, addflags(flags), ROCTYPE, "") {};
+  CMSPixelFileDecoderRAL(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE) : CMSPixelFileDecoder(FileName, rocs, addflags(flags), ROCTYPE, ""), ral_flags(flags) {};
     ~CMSPixelFileDecoderRAL() {};
   private:
+    int ral_flags;
     inline int addflags(int flags) {
       return (flags | FLAG_16BITS_PER_WORD);
     };
