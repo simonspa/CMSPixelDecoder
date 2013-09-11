@@ -389,11 +389,58 @@ bool test_telescope_ral()
   ref.pixels_valid = 8328585;
   ref.evt_invalid = 100872;
   ref.pixels_invalid = 1397125;
-  double ref_timing = 99.7;
+  double ref_timing = 31.7;
 
   std::vector<pixel> * evt = new std::vector<pixel>;
   int64_t timestamp;
-  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderRAL("data/mtb.bin.tel.ral",8,FLAG_ALLOW_CORRUPT_ROC_HEADERS,ROC_PSI46DIG);
+  int flags = FLAG_ALLOW_CORRUPT_ROC_HEADERS | FLAG_OLD_RAL_FORMAT;
+  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderRAL("data/mtb.bin.tel.ral",8,flags,ROC_PSI46DIG);
+
+  clock_t begin = clock();
+  while(1)
+    if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
+  clock_t end = clock();
+  double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+  std::cout << "     Timing: " << elapsed_secs << " sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
+  delete evt;
+
+  // Timing check:
+  if(elapsed_secs <= 0.95*ref_timing || elapsed_secs >= 1.05*ref_timing) {
+    std::cout << "     Timing requirements NOT met! (should be " << ref_timing << " sec)" << std::endl;
+  }
+
+  // Decoding check:
+  if(!compare(ref,dec->statistics)) {
+    std::cout << "Statistics comparison failed." << std::endl;
+    delete dec;
+    return false;
+  }
+  else {
+    delete dec;
+    std::cout << "SUCCEEDED." << std::endl;
+    return true;
+  }
+}
+
+bool test_telescope_ral2()
+{
+  std::cout << "Unit testing: Digital ROC Telescope w/ RAL IPBus readout, Bridge Board Rev.3" << std::endl;
+
+  // REFERENCE:
+  CMSPixelStatistics ref;
+  ref.head_trigger = 0;
+  ref.head_data = 156123;
+  ref.evt_empty = 95080;
+  ref.evt_valid = 61037;
+  ref.pixels_valid = 440936;
+  ref.evt_invalid = 0;
+  ref.pixels_invalid = 3;
+
+  double ref_timing = 10.7;
+
+  std::vector<pixel> * evt = new std::vector<pixel>;
+  int64_t timestamp;
+  CMSPixelFileDecoder * dec = new CMSPixelFileDecoderRAL("data/mtb.bin.tel.ral2",8,0,ROC_PSI46DIGV2);
 
   clock_t begin = clock();
   while(1)
@@ -436,6 +483,7 @@ bool unit_tests() {
 
   if(!test_telescope_psi()) return false;
   if(!test_telescope_ral()) return false;
+  if(!test_telescope_ral2()) return false;
 
   return true;
 }
