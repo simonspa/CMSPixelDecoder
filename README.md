@@ -89,6 +89,7 @@ Generic decoding class for PSI46-type pixel detector readout chips
                headers. This can be e.g. digital ROCs with 0x3f8 headers or
 	       the analog single ROC anomaly when not operated with TBM (sending
 	       "Black UltraBlack" instead of "UltraBlack Black").
+	       Do not use unless you know your data and need it desperately
   FLAG_HAVETBM - tells the decoder whether to look for TBM tokens or not. Be
                aware that a wronmg TBBM token setting will most likely screw up
 	       the decoding since wrong starting positions will be determined.
@@ -103,7 +104,12 @@ Generic decoding class for PSI46-type pixel detector readout chips
                to fully use the available data length by filling all 16bits of the
 	       short. Use this flag to set for single event decoding of IPBus data.
 	       when using the CMSPixelFileDecoderRAL the flag is set automatically.
-  FLAG_OVERWRITE_ROC_HEADER_POS - 
+  FLAG_OVERWRITE_ROC_HEADER_POS - some analog chips seem to be broken in the sense
+	       that they don't send valid ROC headers or the header is cut of. This
+	       flags allows to decode that data by fixing an assumed ROC header pos.
+  FLAG_OLD_RAL_FORMAT - this enables data decoding of RAL IPBus data taken with the
+	       first readout/ Bridge board version used exclusively in 2012 beam
+	       tests. Do not use unless you know why!
   
 * Statistics and returns
   CMSPixelDecoder collects decoding statistics during the run. These can either
