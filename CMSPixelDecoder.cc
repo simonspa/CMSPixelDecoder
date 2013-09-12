@@ -709,8 +709,9 @@ int CMSPixelEventDecoderDigital::decode_hit(std::vector< uint16_t > data, unsign
     pixhit->raw = pulseheight;
     pixhit->col = col;
     pixhit->row = row;
+    pixhit->roc = roc;
 
-    LOG(logINFO) << "HIT ROC" << std::setw(2) << roc << " | pix " << pixhit->col << " " << pixhit->row << ", adc " << pixhit->raw;
+    LOG(logINFO) << "HIT ROC" << std::setw(2) << pixhit->roc << " | pix " << pixhit->col << " " << pixhit->row << ", adc " << pixhit->raw;
     CMSPixelEventDecoder::statistics.pixels_valid++;
     return 0;
   }
@@ -834,8 +835,9 @@ int CMSPixelEventDecoderAnalog::decode_hit(std::vector< uint16_t > data, unsigne
     pixhit->raw = aa;
     pixhit->col = col;
     pixhit->row = row;
+    pixhit->roc = roc;
 
-    LOG(logINFO) << "HIT ROC" << std::setw(2) << roc << " | pix " << pixhit->col << " " << pixhit->row << ", adc " << pixhit->raw;
+    LOG(logINFO) << "HIT ROC" << std::setw(2) << pixhit->roc << " | pix " << pixhit->col << " " << pixhit->row << ", adc " << pixhit->raw;
     CMSPixelEventDecoder::statistics.pixels_valid++;
     return 0;
   }
