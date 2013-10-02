@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <iomanip>
 #include <sys/time.h>
+#include <sys/types.h>
 
 // Flags:
 #define FLAG_ALLOW_CORRUPT_ROC_HEADERS 1

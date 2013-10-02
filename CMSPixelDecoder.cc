@@ -17,6 +17,7 @@
 #include <vector>
 #include <cmath>
 #include <map>
+#include <sys/types.h>
 
 using namespace CMSPixel;
 
@@ -161,12 +162,15 @@ CMSPixelFileDecoder::CMSPixelFileDecoder(const char *FileName, unsigned int rocs
   // Make the roc type available:
   theROC = ROCTYPE;
   
-  // Prepare a new even decoder instance:
+  // Prepare a new event decoder instance:
   if(ROCTYPE & ROC_PSI46V2 || ROCTYPE & ROC_PSI46XDB) {
-    if(!read_address_levels(addressFile,rocs,addressLevels))
+    if(!read_address_levels(addressFile,rocs,addressLevels)) {
       LOG(logERROR) << "Could not read address parameters correctly!";
-    else
+    }
+    else {
       LOG(logDEBUG) << print_addresslevels(addressLevels);
+    }
+
     evt = new CMSPixelEventDecoderAnalog(rocs, flags, ROCTYPE, addressLevels);
   }
   else {
