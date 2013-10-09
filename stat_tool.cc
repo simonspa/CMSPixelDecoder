@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
 
   CMSPixelStatistics global_statistics;
   std::vector<pixel> * evt = new std::vector<pixel>;
-  int64_t timestamp = 0;
+  timing time;
 
   for (int i = 2; i < argc; ++i) {
 
@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
     CMSPixelFileDecoder * decoder = new CMSPixelFileDecoderRAL(argv[i],8,0,ROC_PSI46DIG);
 
     while(1)
-      if(decoder->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
+      if(decoder->get_event(evt, time) <= DEC_ERROR_NO_MORE_DATA) break;
       
     global_statistics.update(decoder->statistics);
     decoder->statistics.print();

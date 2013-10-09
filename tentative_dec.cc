@@ -15,24 +15,25 @@ int main(int argc, char* argv[]) {
 
   CMSPixelStatistics global_statistics;
   std::vector<pixel> * evt = new std::vector<pixel>;
-  int64_t timestamp = 0;
+  timing time;
   int64_t old_timestamp = 0;
-  int flags = FLAG_OVERWRITE_ROC_HEADER_POS; //FLAG_OLD_RAL_FORMAT;
+  int flags = 0; //FLAG_OVERWRITE_ROC_HEADER_POS; //FLAG_OLD_RAL_FORMAT;
 
   int events = atoi(argv[2]);
   std::cout << "Decoding " << events << " events." << std::endl;
 
   for (int i = 3; i < argc; ++i) {
     std::cout << "Trying to decode " << argv[i] << std::endl;
-    CMSPixelFileDecoder * decoder = new CMSPixelFileDecoderPSI_ATB(argv[i],1,flags,ROC_PSI46V2,"addressParameters.dat.018170");
+    //CMSPixelFileDecoder * decoder = new CMSPixelFileDecoderPSI_ATB(argv[i],1,flags,ROC_PSI46V2,"addressParameters.dat.018170");
+    CMSPixelFileDecoder * decoder = new CMSPixelFileDecoderRAL(argv[i],8,flags,ROC_PSI46V2);
 
     for(int j = 0; j < events; ++j) {
-      if(decoder->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
+      if(decoder->get_event(evt, time) <= DEC_ERROR_NO_MORE_DATA) break;
 
-      if(timestamp < old_timestamp) {
+      if(time.timestamp < old_timestamp) {
 	LOG(logWARNING) << "Timestamps not monotonically increasing!";
       }
-      old_timestamp = timestamp;
+      old_timestamp = time.timestamp;
 
     }
 

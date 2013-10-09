@@ -101,6 +101,9 @@ int main( int argc, char **argv )
     // Select Module w/ 16 ROCs
     else if( !strcmp( argv[i], "-m" ) ) nroc = 16;
 
+    // Select number of ROCs
+    else if( !strcmp( argv[i], "-nroc" ) ) nroc = atoi(argv[++i]);
+
     // Switch on TBM usage
     else if( !strcmp( argv[i], "-tbm" ) ) flags |= FLAG_HAVETBM;
 
@@ -270,7 +273,7 @@ int main( int argc, char **argv )
   unsigned int ncor = 0;
   unsigned int nclus = 0;
 
-  int64_t time = 0; // 64 bit
+  CMSPixel::timing evt_timing;
   unsigned long ttime1 = 0; // 64 bit
   unsigned long oldtime = 0; // 64 bit
 
@@ -286,7 +289,7 @@ int main( int argc, char **argv )
 
   while(status > DEC_ERROR_NO_MORE_DATA) {
     decevt = new std::vector<pixel>;
-    status = decoder->get_event(decevt, time);
+    status = decoder->get_event(decevt, evt_timing);
 
     // Count all data words:
     nd += decoder->evt->statistics.data_blocks;
@@ -307,22 +310,22 @@ int main( int argc, char **argv )
     h002->Fill(pixels); 
 
     // Timing histograms:
-    t100->Fill( time/39936E3 );
-    t300->Fill( time/39936E3 );
-    t600->Fill( time/39936E3 );
-    t1200->Fill( time/39936E3 );
-    t2000->Fill( time/39936E3 );
-    t4000->Fill( time/39936E3 );
-    h004->Fill( time/39936E3 );
+    t100->Fill( evt_timing.timestamp/39936E3 );
+    t300->Fill( evt_timing.timestamp/39936E3 );
+    t600->Fill( evt_timing.timestamp/39936E3 );
+    t1200->Fill( evt_timing.timestamp/39936E3 );
+    t2000->Fill( evt_timing.timestamp/39936E3 );
+    t4000->Fill( evt_timing.timestamp/39936E3 );
+    h004->Fill( evt_timing.timestamp/39936E3 );
 
-    difftime = time - prevtime;
-    prevtime = time;
-    if( decoder->statistics.head_data == 1 ) ttime1 = time;
-    utime = time - ttime1;
+    difftime = evt_timing.timestamp - prevtime;
+    prevtime = evt_timing.timestamp;
+    if( decoder->statistics.head_data == 1 ) ttime1 = evt_timing.timestamp;
+    utime = evt_timing.timestamp - ttime1;
 
-    if( oldtime > time )
+    if( oldtime > evt_timing.timestamp )
       invtime++; //inverted time?
-    oldtime = time;
+    oldtime = evt_timing.timestamp;
 
     h005->Fill( utime % 39 ); // flat
     h006->Fill( difftime/39 ); // 39 clocks/turn
@@ -437,7 +440,7 @@ int main( int argc, char **argv )
     std::vector<cluster> clust = getHits(decevt);
 
     if(ndata%1000 == 0) {
-    std::cout << "(clk " << time/39936E3 
+    std::cout << "(clk " << evt_timing.timestamp/39936E3 
 	      << "s, trg " << decoder->statistics.head_trigger 
 	      << ", px" << decevt->size() 
 	      << ", cl " << clust.size() << ")" << std::endl;
@@ -587,9 +590,9 @@ int main( int argc, char **argv )
     }
   }
 
-  double tsecs = (time-ttime1)/39936E3;
+  double tsecs = (evt_timing.timestamp-ttime1)/39936E3;
  std::cout << std::endl;
- std::cout << "time:    " << time-ttime1 << " clocks = " << tsecs << " s" << std::endl;
+ std::cout << "time:    " << evt_timing.timestamp-ttime1 << " clocks = " << tsecs << " s" << std::endl;
  std::cout << "words:   " << nw << std::endl;
  std::cout << "datas:   " << nd << " words" << " (" << 100.0*nd/nw << "%)" << std::endl;
  std::cout << "good:    " << ng << " words" << " (" << 100.0*ng/std::max(1,nd) << "%)" << std::endl;

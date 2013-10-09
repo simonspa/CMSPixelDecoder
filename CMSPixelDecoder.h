@@ -68,6 +68,12 @@ namespace CMSPixel {
     double vcal;
   } pixel;
 
+  typedef struct {
+    int64_t timestamp;
+    uint32_t trigger_number;
+    char trigger_phase;
+  } timing;
+
   // Struct for Decoder levels
   class levels {
   public:
@@ -258,7 +264,7 @@ namespace CMSPixel {
     CMSPixelFileDecoder(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile);
     virtual ~CMSPixelFileDecoder();
 
-    int get_event(std::vector<pixel> * decevt, int64_t & timestamp);
+    int get_event(std::vector<pixel> * decevt, timing & evt_timing);
 
     virtual bool word_is_data(unsigned short word) = 0;
     virtual bool word_is_trigger(unsigned short word) = 0;
@@ -273,7 +279,8 @@ namespace CMSPixel {
     uint8_t theROC;
     virtual bool readWord(uint16_t &word);
     FILE * mtbStream;
-    int64_t cmstime;
+    //int64_t cmstime;
+    timing cms_t;
 
   private:
     bool chop_datastream(std::vector< uint16_t > * rawdata);

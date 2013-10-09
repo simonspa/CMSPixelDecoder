@@ -74,6 +74,7 @@ bool CMSPixelFileDecoderPSI_DTB::process_rawdata(std::vector< uint16_t > * /*dat
 }
 
 bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) {
+
   // IPBus data format: we need to delete some additional headers from the test board.
   // remove padding to 32bit words at the end of the event by reading the data length.
 
@@ -95,8 +96,8 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
   // NEW Trailer format with 15bytes:
   // 15 byte trailer:
   // First 13 bytes unchanged.
-  // Byte 14: upper four bits: data phase; lower four bits: trigger phase
-  // Byte 15: lower four bits: event status (good event == 7); upper four bits: reserved
+  // Byte 14 (d): upper four bits: data phase; lower four bits: trigger phase
+  // Byte 15 (e): lower four bits: event status (good event == 7); upper four bits: reserved
 
   // Catch strange events with corrupted length or so:
   try {
@@ -114,6 +115,17 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
   
     LOG(logDEBUG4) << "IPBus event length: " << event_length << " bytes.";
   
+    // Print the full trailer (debug):
+    /*    std::stringstream ss;
+    for(int i = (int)event_length/2; i < rawdata->size(); i++) {
+      for(int j = 15; j >= 0; j--) {
+	ss << ((rawdata->at(i)>>j)&1);
+      }
+      ss << ".";
+    }
+    LOG(logDEBUG4) << ss.str();*/
+
+
     // Read the timestamp from the trailer:
     uint16_t stamp_pos = (event_length/2) + 8;
 
@@ -121,23 +133,68 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
     uint64_t time1 = rawdata->at(stamp_pos+1);
     uint64_t time0 = rawdata->at(stamp_pos);
 
+    uint16_t phase;
+    if(ral_flags & FLAG_OLD_RAL_FORMAT) phase = 0;
+    else phase = rawdata->at(stamp_pos+3);
+
+    /*    std::stringstream sst;
+    sst << "Timestamp: ";
+    for(int j = 15; j >= 0; j--) sst << ((time0>>j)&1);
+    sst << ".";
+    for(int j = 15; j >= 0; j--) sst << ((time1>>j)&1);
+    sst << ".";
+    for(int j = 15; j >= 0; j--) sst << ((time2>>j)&1);
+    LOG(logDEBUG4) << sst.str();*/
+
+    uint64_t tnumber2 = rawdata->at(stamp_pos-2);
+    uint32_t tnumber1 = rawdata->at(stamp_pos-3);
+    uint32_t tnumber0 = rawdata->at(stamp_pos-4);
+
+    /*    std::stringstream sstp;
+    sstp << "Trigger number: ";
+    for(int j = 15; j >= 0; j--) sstp << ((tnumber0>>j)&1);
+    sstp << ".";
+    for(int j = 15; j >= 0; j--) sstp << ((tnumber1>>j)&1);
+    sstp << ".";
+    for(int j = 15; j >= 0; j--) sstp << ((tnumber2>>j)&1);
+    LOG(logDEBUG4) << sstp.str();*/
+
     if(event_length%2 == 0) {
-    
-      cmstime = ((time1<<32)&0xff00000000LLU) | 
+      LOG(logDEBUG4) << "IPBUS even event length.";
+
+      cms_t.timestamp = ((time1<<32)&0xff00000000LLU) | 
 	((time1<<16)&0xff000000) | 
 	((time0<<16)&0xff0000) | 
 	((time0)&0xff00) | 
 	((time2>>8)&0xff);
+
+      cms_t.trigger_number = (((tnumber1<<24)&0xff000000) | 
+			     ((tnumber1<<8)&0xff0000) | 
+			     ((tnumber0<<8)&0xff00) | 
+			     ((tnumber0>>8)&0xff));
+
+      cms_t.trigger_phase = (time2)&0xf;
+
     }
     else {
-      cmstime = ((time2<<24)&0xff00000000LLU) | 
+      cms_t.timestamp = ((time2<<24)&0xff00000000LLU) | 
 	((time1<<24)&0xff000000) | 
 	((time1<<8)&0xff0000) | 
 	((time0<<8)&0xff00) | 
 	((time2)&0xff);
+
+      cms_t.trigger_number = (((tnumber2<<32)&0xff000000) | 
+			      ((tnumber1<<16)&0xff0000) | 
+			     ((tnumber1<<8)&0xff00) | 
+			     ((tnumber0)&0xff));
+
+      cms_t.trigger_phase = (phase>>8)&0xf;
+
     }
 
-    LOG(logDEBUG4) << "IPBus timestamp: " << std::hex << cmstime << std::dec << " = " << cmstime << "us.";
+    LOG(logDEBUG4) << "IPBus timestamp: " << std::hex << cms_t.timestamp << std::dec << " = " << cms_t.timestamp << "us.";
+    LOG(logDEBUG4) << "IPBus trigger number: " << cms_t.trigger_number;
+    LOG(logDEBUG4) << "IPBus trigger phase: " << (int)cms_t.trigger_phase;
 
     // cut first 8 bytes from header:
     rawdata->erase(rawdata->begin(),rawdata->begin()+4);
@@ -154,7 +211,7 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
 }
 
 CMSPixelFileDecoder::CMSPixelFileDecoder(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile)
-  : statistics(), evt(), theROC(0), mtbStream(), cmstime(0), addressLevels()
+  : statistics(), evt(), theROC(0), mtbStream(), cms_t(), addressLevels()
 {
 
   LOG(logDEBUG) << "Preparing a file decoder instance...";
@@ -192,7 +249,7 @@ CMSPixelFileDecoder::~CMSPixelFileDecoder() {
   LOG(logSUMMARY) << statistics.get();
 }
 
-int CMSPixelFileDecoder::get_event(std::vector<pixel> * decevt, int64_t & timestamp) {
+int CMSPixelFileDecoder::get_event(std::vector<pixel> * decevt, timing & evt_timing) {
   // Check if stream is open:
   if(!mtbStream) return DEC_ERROR_INVALID_FILE;
 
@@ -205,8 +262,8 @@ int CMSPixelFileDecoder::get_event(std::vector<pixel> * decevt, int64_t & timest
   // Take into account that different testboards write the data differently:
   if(!process_rawdata(&data)) return DEC_ERROR_INVALID_EVENT;
 
-  // Deliver the timestamp:
-  timestamp = cmstime;
+  // Deliver the timing information:
+  evt_timing = cms_t;
 
   // And finally call the decoder to do the rest of the work:
   int status = evt->get_event(data, decevt);
@@ -254,8 +311,8 @@ bool CMSPixelFileDecoder::chop_datastream(std::vector< uint16_t > * rawdata) {
       }
       LOG(logDEBUG4) << "Headers: " << head[1] << " " << head[2] << " " << head[3];
       // Calculating the tigger time of the event:
-      cmstime = ((static_cast<uint64_t>(head[1])<<32)&0xffff00000000LLU) | ((static_cast<uint64_t>(head[2])<<16)&0xffff0000) | (head[3]&0xffff);
-      LOG(logDEBUG1) << "Timestamp: " << cmstime;
+      cms_t.timestamp = ((static_cast<uint64_t>(head[1])<<32)&0xffff00000000LLU) | ((static_cast<uint64_t>(head[2])<<16)&0xffff0000) | (head[3]&0xffff);
+      LOG(logDEBUG1) << "Timestamp: " << cms_t.timestamp;
     }
     else if(word_is_header(word) ) {
       LOG(logDEBUG1) << "STATUS header detected : " << std::hex << word << std::dec;

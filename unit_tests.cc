@@ -174,12 +174,12 @@ bool test_analog_single()
   double ref_timing = 0.26;
 
   std::vector<pixel> * evt = new std::vector<pixel>;
-  int64_t timestamp;
+  timing time;
   CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB("data/mtb.bin.ana",1,FLAG_ALLOW_CORRUPT_ROC_HEADERS,ROC_PSI46V2,"data/addressParameters.dat.single");
 
   clock_t begin = clock();
   while(1)
-    if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
+    if(dec->get_event(evt, time) <= DEC_ERROR_NO_MORE_DATA) break;
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
   std::cout << "     Timing: " << elapsed_secs << " sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
@@ -217,12 +217,12 @@ bool test_analog_single_tb()
   double ref_timing = 0.26;
 
   std::vector<pixel> * evt = new std::vector<pixel>;
-  int64_t timestamp;
+  timing time;
   CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB("data/mtb.bin.ana.tb",1,FLAG_OVERWRITE_ROC_HEADER_POS,ROC_PSI46V2,"data/addressParameters.dat.single.tb");
 
   clock_t begin = clock();
   while(1)
-    if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
+    if(dec->get_event(evt, time) <= DEC_ERROR_NO_MORE_DATA) break;
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
   std::cout << "     Timing: " << elapsed_secs << "sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
@@ -260,12 +260,12 @@ bool test_digital_single()
   double ref_timing = 1.69;
 
   std::vector<pixel> * evt = new std::vector<pixel>;
-  int64_t timestamp;
+  timing time;
   CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB("data/mtb.bin.dig",1,FLAG_ALLOW_CORRUPT_ROC_HEADERS,ROC_PSI46DIG,"");
 
   clock_t begin = clock();
   while(1)
-    if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
+    if(dec->get_event(evt, time) <= DEC_ERROR_NO_MORE_DATA) break;
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
   std::cout << "     Timing: " << elapsed_secs << " sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
@@ -303,12 +303,12 @@ bool test_analog_module()
   double ref_timing = 3.76;
 
   std::vector<pixel> * evt = new std::vector<pixel>;
-  int64_t timestamp;
+  timing time;
   CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB("data/mtb.bin.mod.ana",16,FLAG_HAVETBM,ROC_PSI46V2,"data/addressParameters.dat.mod");
 
   clock_t begin = clock();
   while(1)
-    if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
+    if(dec->get_event(evt, time) <= DEC_ERROR_NO_MORE_DATA) break;
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
   std::cout << "     Timing: " << elapsed_secs << " sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
@@ -347,12 +347,12 @@ bool test_telescope_psi()
   double ref_timing = 7.3;
 
   std::vector<pixel> * evt = new std::vector<pixel>;
-  int64_t timestamp;
+  timing time;
   CMSPixelFileDecoder * dec = new CMSPixelFileDecoderPSI_ATB("data/mtb.bin.tel.psi",8,FLAG_ALLOW_CORRUPT_ROC_HEADERS,ROC_PSI46DIG,"");
 
   clock_t begin = clock();
   while(1)
-    if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
+    if(dec->get_event(evt, time) <= DEC_ERROR_NO_MORE_DATA) break;
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
   std::cout << "     Timing: " << elapsed_secs << " sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
@@ -392,13 +392,13 @@ bool test_telescope_ral()
   double ref_timing = 31.7;
 
   std::vector<pixel> * evt = new std::vector<pixel>;
-  int64_t timestamp;
+  timing time;
   int flags = FLAG_ALLOW_CORRUPT_ROC_HEADERS | FLAG_OLD_RAL_FORMAT;
   CMSPixelFileDecoder * dec = new CMSPixelFileDecoderRAL("data/mtb.bin.tel.ral",8,flags,ROC_PSI46DIG);
 
   clock_t begin = clock();
   while(1)
-    if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
+    if(dec->get_event(evt, time) <= DEC_ERROR_NO_MORE_DATA) break;
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
   std::cout << "     Timing: " << elapsed_secs << " sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
@@ -439,12 +439,12 @@ bool test_telescope_ral2()
   double ref_timing = 10.7;
 
   std::vector<pixel> * evt = new std::vector<pixel>;
-  int64_t timestamp;
+  timing time;
   CMSPixelFileDecoder * dec = new CMSPixelFileDecoderRAL("data/mtb.bin.tel.ral2",8,0,ROC_PSI46DIGV2);
 
   clock_t begin = clock();
   while(1)
-    if(dec->get_event(evt, timestamp) <= DEC_ERROR_NO_MORE_DATA) break;
+    if(dec->get_event(evt, time) <= DEC_ERROR_NO_MORE_DATA) break;
   clock_t end = clock();
   double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
   std::cout << "     Timing: " << elapsed_secs << " sec, " << dec->statistics.head_data/elapsed_secs << " events/sec." << std::endl;
