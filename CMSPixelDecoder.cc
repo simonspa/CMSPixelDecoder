@@ -352,9 +352,6 @@ bool CMSPixelFileDecoder::chop_datastream(std::vector< uint16_t > * rawdata) {
   // Rewind one word to detect the header correctly later on:
   fseek(mtbStream , -4 , SEEK_CUR);
   
-  // Might be empty, let's catch that here:
-  if(rawdata->empty()) return false;
-
   return true;
 }
 
