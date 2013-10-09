@@ -20,13 +20,13 @@ int main(int argc, char* argv[]) {
   for (int i = 2; i < argc; ++i) {
 
     std::cout << "Trying to decode " << argv[i] << std::endl;
-    CMSPixelFileDecoder * decoder = new CMSPixelFileDecoderRAL(argv[i],8,0,ROC_PSI46DIG);
+    CMSPixelFileDecoder * decoder = new CMSPixelFileDecoderRAL(argv[i],8,0,ROC_PSI46DIGV2);
 
     while(1)
       if(decoder->get_event(evt, time) <= DEC_ERROR_NO_MORE_DATA) break;
       
     global_statistics.update(decoder->statistics);
-    decoder->statistics.print();
+    //    decoder->statistics.print();
     delete decoder;
   }
 

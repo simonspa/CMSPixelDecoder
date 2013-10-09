@@ -96,8 +96,11 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
   // NEW Trailer format with 15bytes:
   // 15 byte trailer:
   // First 13 bytes unchanged.
-  // Byte 14 (d): upper four bits: data phase; lower four bits: trigger phase
+  // Byte 14 (d): lower four bits: data phase; upper four bits: trigger phase
   // Byte 15 (e): lower four bits: event status (good event == 7); upper four bits: reserved
+
+  // FIXME apparently trigger phase is stored in upper four bits of byte 15! (just right before the "good event" marker):
+  // Byte 15: TTT00111 (only using 3bit)
 
   // Catch strange events with corrupted length or so:
   try {
@@ -114,17 +117,6 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
     else event_length -= 15;
   
     LOG(logDEBUG4) << "IPBus event length: " << event_length << " bytes.";
-  
-    // Print the full trailer (debug):
-    /*    std::stringstream ss;
-    for(int i = (int)event_length/2; i < rawdata->size(); i++) {
-      for(int j = 15; j >= 0; j--) {
-	ss << ((rawdata->at(i)>>j)&1);
-      }
-      ss << ".";
-    }
-    LOG(logDEBUG4) << ss.str();*/
-
 
     // Read the timestamp from the trailer:
     uint16_t stamp_pos = (event_length/2) + 8;
@@ -137,27 +129,9 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
     if(ral_flags & FLAG_OLD_RAL_FORMAT) phase = 0;
     else phase = rawdata->at(stamp_pos+3);
 
-    /*    std::stringstream sst;
-    sst << "Timestamp: ";
-    for(int j = 15; j >= 0; j--) sst << ((time0>>j)&1);
-    sst << ".";
-    for(int j = 15; j >= 0; j--) sst << ((time1>>j)&1);
-    sst << ".";
-    for(int j = 15; j >= 0; j--) sst << ((time2>>j)&1);
-    LOG(logDEBUG4) << sst.str();*/
-
     uint64_t tnumber2 = rawdata->at(stamp_pos-2);
     uint32_t tnumber1 = rawdata->at(stamp_pos-3);
     uint32_t tnumber0 = rawdata->at(stamp_pos-4);
-
-    /*    std::stringstream sstp;
-    sstp << "Trigger number: ";
-    for(int j = 15; j >= 0; j--) sstp << ((tnumber0>>j)&1);
-    sstp << ".";
-    for(int j = 15; j >= 0; j--) sstp << ((tnumber1>>j)&1);
-    sstp << ".";
-    for(int j = 15; j >= 0; j--) sstp << ((tnumber2>>j)&1);
-    LOG(logDEBUG4) << sstp.str();*/
 
     if(event_length%2 == 0) {
       LOG(logDEBUG4) << "IPBUS even event length.";
@@ -173,7 +147,7 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
 			     ((tnumber0<<8)&0xff00) | 
 			     ((tnumber0>>8)&0xff));
 
-      cms_t.trigger_phase = (time2)&0xf;
+      cms_t.trigger_phase = (phase>>13)&0xf;
 
     }
     else {
@@ -188,13 +162,16 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
 			     ((tnumber1<<8)&0xff00) | 
 			     ((tnumber0)&0xff));
 
-      cms_t.trigger_phase = (phase>>8)&0xf;
+      cms_t.trigger_phase = (phase>>5)&0xf;
 
     }
 
+    cms_t.trigger_phase &= 0x07;
+    //  0000:1111 = 0F
+    //  0000:0111 = 07
+
     LOG(logDEBUG4) << "IPBus timestamp: " << std::hex << cms_t.timestamp << std::dec << " = " << cms_t.timestamp << "us.";
     LOG(logDEBUG4) << "IPBus trigger number: " << cms_t.trigger_number;
-    LOG(logDEBUG4) << "IPBus trigger phase: " << (int)cms_t.trigger_phase;
 
     // cut first 8 bytes from header:
     rawdata->erase(rawdata->begin(),rawdata->begin()+4);
