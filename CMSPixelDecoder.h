@@ -1,10 +1,13 @@
-// Version: $Id: CMSPixelDecoder.h 2371 2013-02-14 08:49:35Z spanns $
-/*========================================================================*/
-/*          CMSPixel Decoder v3.1                                         */
-/*          Author: Simon Spannagel (s.spannagel@cern.ch)                 */
-/*          Created       23 feb 2012                                     */
-/*          Last modified 29 apr 2013                                     */
-/*========================================================================*/
+/*==========================================================================*/
+/*          CMSPixel Decoder                                                */
+/*          Questions: s.spannagel@cern.ch                                  */
+/*          Source: https://github.com/simonspa/CMSPixelDecoder             */
+/*                                                                          */
+/* CMSPixel Decoder is free software: you can redistribute it and/or modify */
+/* it under the terms of the GNU General Public License as published by     */
+/* the Free Software Foundation, either version 3 of the License, or        */
+/* (at your option) any later version.                                      */
+/*==========================================================================*/
 
 #ifndef CMSPIXELDECODER_H_
 #define CMSPIXELDECODER_H_
