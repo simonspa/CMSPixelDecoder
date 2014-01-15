@@ -27,8 +27,26 @@ int main(int argc, char* argv[]) {
     //CMSPixelFileDecoder * decoder = new CMSPixelFileDecoderPSI_ATB(argv[i],1,flags,ROC_PSI46V2,"addressParameters.dat.018170");
     CMSPixelFileDecoder * decoder = new CMSPixelFileDecoderRAL(argv[i],8,flags,ROC_PSI46DIGV2);
 
+    FILE * pFile;
+    pFile = fopen("faileddecoding.dat","w");
+
     for(int j = 0; j < events; ++j) {
-      if(decoder->get_event(evt, time) <= DEC_ERROR_NO_MORE_DATA) break;
+      int status = decoder->get_event(evt, time);
+      //std::cout <<"Return: " << status << std::endl;
+      if(status  <= DEC_ERROR_NO_MORE_DATA) break;
+
+      // Get raw data of everything which has errors in it:
+      if(status < DEC_ERROR_EMPTY_EVENT) {
+	std::vector<uint16_t> raw = decoder->get_rawdata();
+	std::cout << "Got raw data with length of " << raw.size() << std::endl;
+	for(std::vector<uint16_t>::iterator it = raw.begin(); it != raw.end(); ++it) {
+	  std::cout << std::hex << std::setw(4) << std::setfill('0') << (int)(*it) << " ";
+	}
+	std::cout << std::endl;
+
+	// Write to file:
+	fwrite (&raw[0], sizeof(uint16_t), raw.size(), pFile);
+      }
 
       if(time.timestamp < old_timestamp) {
 	LOG(logWARNING) << "Timestamps not monotonically increasing!";
@@ -37,6 +55,7 @@ int main(int argc, char* argv[]) {
 
     }
 
+    fclose(pFile);
     global_statistics.update(decoder->statistics);
     decoder->statistics.print();
     delete decoder;
