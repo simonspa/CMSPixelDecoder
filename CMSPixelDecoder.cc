@@ -233,11 +233,17 @@ int CMSPixelFileDecoder::get_event(std::vector<pixel> * decevt, timing & evt_tim
   // Check if stream is open:
   if(!mtbStream) return DEC_ERROR_INVALID_FILE;
 
+  // Clear the data from previous decoding:
+  lastevent_raw.clear();
+
   std::vector < uint16_t > data;
   LOG(logDEBUG) << "STATUS Start chopping file.";
 
   // Cut off the next event from the filestream:
   if(!chop_datastream(&data)) return DEC_ERROR_NO_MORE_DATA;
+
+  // Store the raw data of this event, just in case we want to access it again:
+  lastevent_raw = data;
 
   // Take into account that different testboards write the data differently:
   if(!process_rawdata(&data)) return DEC_ERROR_INVALID_EVENT;
@@ -250,6 +256,25 @@ int CMSPixelFileDecoder::get_event(std::vector<pixel> * decevt, timing & evt_tim
   statistics.update(evt->statistics);
 
   return status;
+}
+
+std::vector<uint16_t> CMSPixelFileDecoder::get_rawdata() {
+  return lastevent_raw;
+}
+
+std::vector<uint16_t> CMSPixelFileDecoderRAL::get_rawdata() {
+
+  std::vector<uint16_t> rawdat;
+  // Re-add the header:
+  for(int i = 0; i < 2; i++) rawdat.push_back(0xFFFF);
+  for(int i = 0; i < 2; i++) rawdat.push_back(0x0000);
+
+  // We need to flip 8bit chars around:
+  for(std::vector<uint16_t>::iterator it = lastevent_raw.begin(); it != lastevent_raw.end(); ++it) {
+    uint16_t word = (((*it) << 8)&0xFF00) | ((*it >> 8)&0x00FF);
+    rawdat.push_back(word);
+  }
+  return rawdat;
 }
 
 bool CMSPixelFileDecoder::readWord(uint16_t &word) {

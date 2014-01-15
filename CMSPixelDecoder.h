@@ -268,6 +268,7 @@ namespace CMSPixel {
     virtual ~CMSPixelFileDecoder();
 
     int get_event(std::vector<pixel> * decevt, timing & evt_timing);
+    virtual std::vector<uint16_t> get_rawdata();
 
     virtual bool word_is_data(unsigned short word) = 0;
     virtual bool word_is_trigger(unsigned short word) = 0;
@@ -284,6 +285,7 @@ namespace CMSPixel {
     FILE * mtbStream;
     //int64_t cmstime;
     timing cms_t;
+    std::vector<uint16_t> lastevent_raw;
 
   private:
     bool chop_datastream(std::vector< uint16_t > * rawdata);
@@ -296,6 +298,7 @@ namespace CMSPixel {
   public:
   CMSPixelFileDecoderRAL(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE) : CMSPixelFileDecoder(FileName, rocs, addflags(flags), ROCTYPE, ""), ral_flags(flags) {};
     ~CMSPixelFileDecoderRAL() {};
+    std::vector<uint16_t> get_rawdata();
   private:
     int ral_flags;
     inline int addflags(int flags) {
