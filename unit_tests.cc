@@ -148,13 +148,41 @@ int main(int argc, char* argv[]) {
 
 bool compare(CMSPixelStatistics reference, CMSPixelStatistics measurement)
 {
-  if(reference.head_data != measurement.head_data) return false;
-  if(reference.head_trigger != measurement.head_trigger) return false;
-  if(reference.evt_valid != measurement.evt_valid) return false;
-  if(reference.evt_empty != measurement.evt_empty) return false;
-  if(reference.evt_invalid != measurement.evt_invalid) return false;
-  if(reference.pixels_valid != measurement.pixels_valid) return false;
-  if(reference.pixels_invalid != measurement.pixels_invalid) return false;
+  if(reference.head_data != measurement.head_data) {
+    std::cout << "hdata ref " << reference.head_data
+	      << " != meas " << measurement.head_data << std::endl;
+    return false;
+  }
+  if(reference.head_trigger != measurement.head_trigger) {
+    std::cout << "htrig ref " << reference.head_trigger
+	      << " != meas " << measurement.head_trigger << std::endl;
+    return false;
+  }
+  if(reference.evt_valid != measurement.evt_valid) {
+    std::cout << "eval ref " << reference.evt_valid
+	      << " != meas " << measurement.evt_valid << std::endl;
+    return false;
+  }
+  if(reference.evt_empty != measurement.evt_empty) {
+    std::cout << "eempt ref " << reference.evt_empty
+	      << " != meas " << measurement.evt_empty << std::endl;
+    return false;
+  }
+  if(reference.evt_invalid != measurement.evt_invalid) {
+    std::cout << "eival ref " << reference.evt_invalid
+	      << " != meas " << measurement.evt_invalid << std::endl;
+    return false;
+  }
+  if(reference.pixels_valid != measurement.pixels_valid) {
+    std::cout << "pxval ref " << reference.pixels_valid
+	      << " != meas " << measurement.pixels_valid << std::endl;
+    return false;
+  }
+  if(reference.pixels_invalid != measurement.pixels_invalid) {
+    std::cout << "pxival ref " << reference.pixels_invalid
+	      << " != meas " << measurement.pixels_invalid << std::endl;
+    return false;
+  }
 
   return true;
 }
