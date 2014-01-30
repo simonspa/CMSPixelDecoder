@@ -24,8 +24,8 @@ int main(int argc, char* argv[]) {
 
   for (int i = 3; i < argc; ++i) {
     std::cout << "Trying to decode " << argv[i] << std::endl;
-    //CMSPixelFileDecoder * decoder = new CMSPixelFileDecoderPSI_ATB(argv[i],1,flags,ROC_PSI46V2,"addressParameters.dat.018170");
-    CMSPixelFileDecoder * decoder = new CMSPixelFileDecoderRAL(argv[i],8,flags,ROC_PSI46DIGV2);
+    CMSPixelFileDecoder * decoder = new CMSPixelFileDecoderPSI_DTB(argv[i],1,flags,ROC_PSI46DIGV2,"");
+    //CMSPixelFileDecoder * decoder = new CMSPixelFileDecoderRAL(argv[i],8,flags,ROC_PSI46DIGV2);
 
     FILE * pFile;
     pFile = fopen("faileddecoding.dat","w");
