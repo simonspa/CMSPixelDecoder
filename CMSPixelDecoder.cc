@@ -360,6 +360,42 @@ bool CMSPixelFileDecoder::chop_datastream(std::vector< uint16_t > * rawdata) {
   return true;
 }
 
+bool CMSPixelFileDecoderPSI_DTB::chop_datastream(std::vector< uint16_t > * rawdata) {
+
+  uint16_t word;
+  rawdata->clear();
+    
+  LOG(logDEBUG1) << "Chopping datastream from DTB...";
+  if(!readWord(word)) return false;
+
+  while (!word_is_data(word)) {
+    // If header is detected read more words:
+    LOG(logDEBUG1) << "STATUS drop: " << std::hex << word << std::dec;
+    if(!readWord(word)) return false;
+  }
+    
+  LOG(logDEBUG) << "STATUS data header     : " << std::hex << word << std::dec;
+  statistics.head_data++;
+  
+  // Store the first header word:
+  rawdata->push_back(word);
+            
+  // read the data until the next MTB header arises:
+  // morewords:
+  if(!readWord(word)) return false;
+  while( !word_is_data(word) && !feof(mtbStream)){
+    rawdata->push_back(word);
+    if(!readWord(word)) return false;
+  }
+
+  // Store the last data word:
+  rawdata->push_back(word);
+
+  LOG(logDEBUG1) << "Raw data array size: " << rawdata->size() << ", so " << 16*rawdata->size() << " bits.";
+    
+  return true;
+}
+
 bool CMSPixelFileDecoder::read_address_levels(const char* levelsFile, unsigned int rocs, levelset & addressLevels) {
   LOG(logDEBUG3) << "READ_ADDRESS_LEVELS starting...";
   // Reading files with format defined by psi46expert::DecodeRawPacket::Print

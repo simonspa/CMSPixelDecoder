@@ -287,8 +287,9 @@ namespace CMSPixel {
     timing cms_t;
     std::vector<uint16_t> lastevent_raw;
 
+    virtual bool chop_datastream(std::vector< uint16_t > * rawdata);
+
   private:
-    bool chop_datastream(std::vector< uint16_t > * rawdata);
     bool read_address_levels(const char* levelsFile, unsigned int rocs, levelset & addressLevels);
     std::string print_addresslevels(levelset addLevels);
     levelset addressLevels;
@@ -354,26 +355,18 @@ class CMSPixelFileDecoderPSI_ATB : public CMSPixelFileDecoder {
 
 class CMSPixelFileDecoderPSI_DTB : public CMSPixelFileDecoder {
   public:
-  CMSPixelFileDecoderPSI_DTB(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile) : CMSPixelFileDecoder(FileName, rocs, flags, ROCTYPE, addressFile) {};
+  CMSPixelFileDecoderPSI_DTB(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile) : CMSPixelFileDecoder(FileName, rocs, flags | FLAG_12BITS_PER_WORD, ROCTYPE, addressFile) {};
     ~CMSPixelFileDecoderPSI_DTB() {};
   private:
+    bool chop_datastream(std::vector< uint16_t > * rawdata);
+
     inline bool word_is_data(unsigned short word) {
-      if(word == 0x8501 || word == 0x8581 || word == 0x8505) return true;
+      if((word&0xF000) > 0x0000) return true;
       else return false;
     };
-    inline bool word_is_trigger(unsigned short word) {
-      if(word == 0x8504) return true;
-      else return false;
-    };
-    inline bool word_is_header(unsigned short word) {
-      if(word == 0x8501 || word == 0x8581 || word == 0x8505 || word == 0x8504 || word == 0x8502 || word == 0x8508 || word == 0x8510) return true;
-      else return false;
-    };
-    inline bool word_is_2nd_header(unsigned short word) {
-      // PSI DTB features 16bit headers only.
-      (void)word;
-      return true;
-    };
+    inline bool word_is_trigger(unsigned short /*word*/) { return false; };
+    inline bool word_is_header(unsigned short /*word*/) { return true; };
+    inline bool word_is_2nd_header(unsigned short /*word*/) { return true; }
     bool process_rawdata(std::vector< uint16_t > * rawdata);
   };
 
