@@ -201,38 +201,51 @@ int main( int argc, char **argv )
     if( chip == 203 ) keV = 0.350; // digital: 50e/small Vcal
     if( chip ==  39 ) keV = 0.350; // digital: 7 = large/small Vcal
     if( chip ==  47 ) keV = 0.350; // copy
-
+    if( chip > 200 ) keV = 0.350;
    std::cout << std::endl;
    std::cout << "Gain file: " << gainFileName << std::endl;
     if(weib) std::cout << "  Weibull gain calibration." << std::endl;
     else std::cout << " TanH gain calibration." << std::endl;
 
-    while( gainFile >> ih ){
-      gainFile >> icol;
-      gainFile >> irow;
-      if( weib ) {
+
+
+    if( weib ) {
+      while( gainFile >> ih ){
 	gainFile >> ho;//horz offset
 	gainFile >> ga;//width
 	gainFile >> ex;//exponent
 	gainFile >> am;//gain
 	gainFile >> vo;//vert offset
+
+	amax[icol][irow] = am*aa;
+	Gain[icol][irow] = ga;
+	horz[icol][irow] = ho;
+	vert[icol][irow] = vo*aa;
+	expo[icol][irow] = ex;
       }
-      else {
+    }else {      
+      for(int i=0;i<15;i++) gainFile >> ih;   // remove dummy words      
+      while( !gainFile.eof()) {
+
 	gainFile >> am;//Amax
 	gainFile >> ho;//horz offset
 	gainFile >> ga;//gain [ADC/large Vcal]
 	gainFile >> vo;//vert offset
-      }
+	gainFile >> ih;
+	gainFile >> icol;
+	gainFile >> irow;
 
-      amax[icol][irow] = am*aa;
-      Gain[icol][irow] = ga;
-      horz[icol][irow] = ho;
-      vert[icol][irow] = vo*aa;
-      expo[icol][irow] = ex;
+	
+	amax[icol][irow] = am*aa;
+	Gain[icol][irow] = ga;
+	horz[icol][irow] = ho;
+	vert[icol][irow] = vo*aa;
+	expo[icol][irow] = ex;
+	//printf(" %d, %d, %f, %f, %f, %f \n", icol, irow, am, ga, ho, vo, ex);
+      }
     }
    std::cout << std::endl;
   }//gainFile
-
 
   // (re-)create root file:
   if(run != 0) histoName = "data" + ZeroPadNumber(run,6) + ".root";
@@ -399,17 +412,19 @@ int main( int argc, char **argv )
 	(*px).vcal = (pow(-log( 1 - Ared / ma9 ), 1/expo[(*px).col][(*px).row])
 		      * Gain[(*px).col][(*px).row] + horz[(*px).col][(*px).row])
 	              * keV; // Weibull [ke]
-      else
-	(*px).vcal = (TMath::ATanH( Ared / ma9 ) *
-		      Gain[(*px).col][(*px).row] + horz[(*px).col][(*px).row] ) * keV; // [ke]
-
+      else {
+	//(*px).vcal = (TMath::ATanH( Ared / ma9 ) *
+	//	      Gain[(*px).col][(*px).row] + horz[(*px).col][(*px).row] ) * keV; // [ke]
+	(*px).vcal = (TMath::ATanH( ((*px).raw-vert[(*px).col][(*px).row]) / Gain[(*px).col][(*px).row] ) + horz[(*px).col][(*px).row] ) / amax[(*px).col][(*px).row]; 
+      }
       // Calibration across col psi46
       double acor = 1.0 + 0.20 * ( (*px).col - 25.5 ) / 51.0; 
       // Not necessary anymore for everything from PSI46XDB:
       if( chip > 100 ) acor = 1.0;
       double pxq = (*px).vcal / acor;
-
-      h016->Fill( pxq );
+//        printf(" pixel data c%d,r%d, ADC %d, vcal %f \n", (*px).col, (*px).row, (*px).raw, (*px).vcal);
+//        printf("    gain file %f, %f, %f, %f \n", amax[(*px).col][(*px).row], horz[(*px).col][(*px).row], Gain[(*px).col][(*px).row],vert[(*px).col][(*px).row]);
+      h016->Fill( pxq*50./1000. ); //1vcal ~= 50electrons
       h216->Fill( pxq );
       q600->Fill( utime/39936E3, pxq ); // 2D
       p600->Fill( utime/39936E3, pxq ); // prof
@@ -818,7 +833,7 @@ bool bookHistograms() {
     //h014 = new TH1D( "h014", "address;address;events", 16, -0.5, 15.5 );
     h015 = new TH1D( "h015", "PH;PH [ADC];pixels", 256, -0.5, 255.5 );
     h016 = new TH1D( "h016", "pixel charge;pixel charge [ke];pixels", 120, -10, 50 );
-    h216 = new TH1D( "h216", "pixel charge;pixel charge [ke];pixels", 100, 0, 25 );
+    h216 = new TH1D( "h216", "pixel charge;pixel charge [Vcal];pixels", 2000, 0, 2000 );
 
     h017  = new TProfile2D( "h017", "mean charge/pixel;col;row;<pixel charge> [ke]",52, -0.5, 51.5, 80, -0.5, 79.5, 0, 999 );
     h018 = new TProfile( "h018", "mean pixel charge/col;col;<pixel charge> [ke]",52, -0.5, 51.5, 0, 999 );
