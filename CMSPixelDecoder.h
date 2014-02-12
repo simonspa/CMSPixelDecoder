@@ -102,6 +102,7 @@ namespace CMSPixel {
       evt_valid(0),
       evt_empty(0),
       evt_invalid(0),
+      ipbus_invalid(0),
       pixels_valid(0),
       pixels_invalid(0)	{ init(); };
     void init();
@@ -122,6 +123,9 @@ namespace CMSPixel {
     //  * No ROC headers / wrong number of ROC headers
     //  * Missing TBM Header or Trailer
     uint32_t evt_invalid;
+    // Number of invalid IPBus events - this means usually the data size reported
+    // inside the IPBus header does not match the data read out for that event.
+    uint32_t ipbus_invalid;
     // Number of correctly decoded pixel hits
     uint32_t pixels_valid;
     // Number of pixel hits with invalid address or zero-bit (undecodable)

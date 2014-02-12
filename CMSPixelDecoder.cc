@@ -26,7 +26,7 @@ using namespace CMSPixel;
 
 void CMSPixelStatistics::init() {
   head_data = head_trigger = 0;
-  evt_valid = evt_empty = evt_invalid = 0;
+  evt_valid = evt_empty = evt_invalid = ipbus_invalid = 0;
   pixels_valid = pixels_invalid = 0;
 }
 
@@ -37,6 +37,7 @@ void CMSPixelStatistics::update(CMSPixelStatistics stats) {
   evt_valid += stats.evt_valid;
   evt_empty += stats.evt_empty;
   evt_invalid += stats.evt_invalid;
+  ipbus_invalid += stats.ipbus_invalid;
   pixels_valid += stats.pixels_valid;
   pixels_invalid += stats.pixels_invalid;
 }
@@ -52,6 +53,7 @@ std::string CMSPixelStatistics::get() {
   os << "    Events empty:      " << std::setw(8) << evt_empty << std::endl;
   os << "    Events valid:      " << std::setw(8) << evt_valid << std::endl;
   os << "    Events invalid:    " << std::setw(8) << evt_invalid << std::endl;
+  os << "    IPBus Evt invalid: " << std::setw(8) << ipbus_invalid << std::endl;
 
   os << "    Pixels valid:      " << std::setw(8) << pixels_valid << std::endl;
   os << "    Pixels invalid:    " << std::setw(8) << pixels_invalid;
@@ -184,7 +186,7 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
   }
   catch(...) {
     LOG(logERROR) << "Invalid IPBus event detected.";
-    statistics.evt_invalid++;
+    statistics.ipbus_invalid++;
     return false;
   }
   return true;
