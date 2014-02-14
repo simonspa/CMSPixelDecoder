@@ -27,7 +27,7 @@ using namespace CMSPixel;
 void CMSPixelStatistics::init() {
   head_data = head_trigger = 0;
   evt_valid = evt_empty = evt_invalid = ipbus_invalid = 0;
-  pixels_valid = pixels_invalid = 0;
+  pixels_valid = pixels_invalid = pixels_invalid_eor = 0;
 }
 
 void CMSPixelStatistics::update(CMSPixelStatistics stats) {
@@ -40,6 +40,7 @@ void CMSPixelStatistics::update(CMSPixelStatistics stats) {
   ipbus_invalid += stats.ipbus_invalid;
   pixels_valid += stats.pixels_valid;
   pixels_invalid += stats.pixels_invalid;
+  pixels_invalid_eor += stats.pixels_invalid_eor;
 }
 
 std::string CMSPixelStatistics::get() {
@@ -56,7 +57,8 @@ std::string CMSPixelStatistics::get() {
   os << "    IPBus Evt invalid: " << std::setw(8) << ipbus_invalid << std::endl;
 
   os << "    Pixels valid:      " << std::setw(8) << pixels_valid << std::endl;
-  os << "    Pixels invalid:    " << std::setw(8) << pixels_invalid;
+  os << "    Pixels invalid:    " << std::setw(8) << pixels_invalid << std::endl;
+  os << "       -> End of ROC:  " << std::setw(8) << pixels_invalid_eor;
   return os.str();
 }
 
@@ -533,20 +535,38 @@ int CMSPixelEventDecoder::get_event(std::vector< uint16_t > & data, std::vector<
   pixel tmp;
     
   LOG(logDEBUG3) << "Looping over event data with granularity " << L_GRANULARITY << ", " << L_GRANULARITY*data.size() << " iterations.";
-        
+
+  // Helper for checking pixel error position:
+  unsigned int invalid_pixel_roc = 0;
+  bool checkroc;
+
   while(pos < L_GRANULARITY*data.size()) {
     // Try to find a new ROC header:
     if(find_roc_header(data,&pos,roc+1)) roc++;
-    else if(decode_hit(data,&pos,roc,&tmp) == 0) 
-      evt->push_back(tmp);
+    else {
+      int hitstatus = decode_hit(data,&pos,roc,&tmp);
+      // Pixel decoding is fine:
+      if(hitstatus == 0) {
+	// The last pixel was on a differend ROC:
+	if(checkroc == true && roc != invalid_pixel_roc) { statistics.pixels_invalid_eor++; }
+	checkroc = false;
+	evt->push_back(tmp);
+      }
+      else if (hitstatus == DEC_ERROR_INVALID_ADDRESS) { 
+	status = DEC_ERROR_INVALID_ADDRESS;
+	invalid_pixel_roc = roc;
+	checkroc = true;
+      }
+    }
   }
+  if(checkroc == true) { statistics.pixels_invalid_eor++; }
 
   // Check sanity of output
-  status = post_check_sanity(evt,roc);
-  if(status != 0) return status;
+  int status2 = post_check_sanity(evt,roc);
+  if(status2 != 0) return status;
 
-  LOG(logDEBUG) << "STATUS end of event processing.";
-  return 0;
+  LOG(logDEBUG) << "STATUS end of event processing, status = " << status;
+  return status;
 }
 
 

@@ -104,7 +104,8 @@ namespace CMSPixel {
       evt_invalid(0),
       ipbus_invalid(0),
       pixels_valid(0),
-      pixels_invalid(0)	{ init(); };
+      pixels_invalid(0),
+      pixels_invalid_eor(0) { init(); };
     void init();
     void update(CMSPixelStatistics stats);
     void print();
@@ -131,6 +132,8 @@ namespace CMSPixel {
     // Number of pixel hits with invalid address or zero-bit (undecodable)
     // Events containing only some invalid pixels are still delivered, only return value is set.
     uint32_t pixels_invalid;
+    // Subset of invalid pixels which come from the end of a ROC readout
+    uint32_t pixels_invalid_eor;
 
     //    int data_notrailer;
     //    int data_huge;
