@@ -28,6 +28,7 @@ void CMSPixelStatistics::init() {
   head_data = head_trigger = 0;
   evt_valid = evt_empty = evt_invalid = ipbus_invalid = 0;
   pixels_valid = pixels_invalid = pixels_invalid_eor = 0;
+  rocmap.clear();
 }
 
 void CMSPixelStatistics::update(CMSPixelStatistics stats) {
@@ -41,6 +42,7 @@ void CMSPixelStatistics::update(CMSPixelStatistics stats) {
   pixels_valid += stats.pixels_valid;
   pixels_invalid += stats.pixels_invalid;
   pixels_invalid_eor += stats.pixels_invalid_eor;
+  for(size_t i = 0; i < rocmap.size(); i++) { rocmap[i] += stats.rocmap[i]; }
 }
 
 std::string CMSPixelStatistics::get() {
@@ -58,7 +60,13 @@ std::string CMSPixelStatistics::get() {
 
   os << "    Pixels valid:      " << std::setw(8) << pixels_valid << std::endl;
   os << "    Pixels invalid:    " << std::setw(8) << pixels_invalid << std::endl;
-  os << "       -> End of ROC:  " << std::setw(8) << pixels_invalid_eor;
+
+  for(size_t i = 0; i < rocmap.size(); i++) { 
+    os << "     on ROC" << std::setw(2) << std::setfill('0') << i << ":         " 
+       << rocmap[i] << std::endl;
+  }
+  
+  os << "     -> at end of ROC: " << std::setw(8) << pixels_invalid_eor;
   return os.str();
 }
 
@@ -554,6 +562,7 @@ int CMSPixelEventDecoder::get_event(std::vector< uint16_t > & data, std::vector<
       }
       else if (hitstatus == DEC_ERROR_INVALID_ADDRESS) { 
 	status = DEC_ERROR_INVALID_ADDRESS;
+	statistics.rocmap[roc]++;
 	invalid_pixel_roc = roc;
 	checkroc = true;
       }

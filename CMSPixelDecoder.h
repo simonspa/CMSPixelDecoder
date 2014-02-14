@@ -105,7 +105,8 @@ namespace CMSPixel {
       ipbus_invalid(0),
       pixels_valid(0),
       pixels_invalid(0),
-      pixels_invalid_eor(0) { init(); };
+      pixels_invalid_eor(0),
+      rocmap() { init(); };
     void init();
     void update(CMSPixelStatistics stats);
     void print();
@@ -134,6 +135,8 @@ namespace CMSPixel {
     uint32_t pixels_invalid;
     // Subset of invalid pixels which come from the end of a ROC readout
     uint32_t pixels_invalid_eor;
+    // Map of all ROCs, with the value being the number of invalid pixels on that ROC
+    std::map<unsigned int, unsigned int> rocmap;
 
     //    int data_notrailer;
     //    int data_huge;
