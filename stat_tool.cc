@@ -13,7 +13,6 @@ int main(int argc, char* argv[]) {
 
   Log::ReportingLevel() = Log::FromString("SUMMARY");
 
-  CMSPixelStatistics global_statistics;
   std::vector<pixel> * evt = new std::vector<pixel>;
   timing time;
   unsigned int num_rocs = 8;
@@ -27,6 +26,8 @@ int main(int argc, char* argv[]) {
     // add to the list of files to be processed:
     else { files.push_back(string(argv[i])); }
   }
+
+  CMSPixelStatistics global_statistics(num_rocs);
 
   for (std::vector<std::string>::iterator it = files.begin(); it != files.end(); ++it) {
     

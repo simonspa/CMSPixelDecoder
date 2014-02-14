@@ -13,19 +13,20 @@ int main(int argc, char* argv[]) {
 
   Log::ReportingLevel() = Log::FromString(argv[1] ? argv[1] : "SUMMARY");
 
-  CMSPixelStatistics global_statistics;
+  unsigned int nrocs = 1;
+  CMSPixelStatistics global_statistics(nrocs);
   std::vector<pixel> * evt = new std::vector<pixel>;
   timing time;
   int64_t old_timestamp = 0;
   int flags = 0; //FLAG_OVERWRITE_ROC_HEADER_POS; //FLAG_OLD_RAL_FORMAT;
-
+  
   int events = atoi(argv[2]);
   std::cout << "Decoding " << events << " events." << std::endl;
 
   for (int i = 3; i < argc; ++i) {
     std::cout << "Trying to decode " << argv[i] << std::endl;
-    CMSPixelFileDecoder * decoder = new CMSPixelFileDecoderPSI_DTB(argv[i],1,flags,ROC_PSI46DIGV2,"");
-    //CMSPixelFileDecoder * decoder = new CMSPixelFileDecoderRAL(argv[i],8,flags,ROC_PSI46DIGV2);
+    CMSPixelFileDecoder * decoder = new CMSPixelFileDecoderPSI_DTB(argv[i],nrocs,flags,ROC_PSI46DIGV2,"");
+    //CMSPixelFileDecoder * decoder = new CMSPixelFileDecoderRAL(argv[i],nrocs,flags,ROC_PSI46DIGV2);
 
     FILE * pFile;
     pFile = fopen("faileddecoding.dat","w");

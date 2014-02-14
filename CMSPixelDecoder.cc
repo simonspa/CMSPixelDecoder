@@ -24,11 +24,12 @@
 
 using namespace CMSPixel;
 
-void CMSPixelStatistics::init() {
+void CMSPixelStatistics::init(unsigned int nrocs) {
   head_data = head_trigger = 0;
   evt_valid = evt_empty = evt_invalid = ipbus_invalid = 0;
-  pixels_valid = pixels_invalid = pixels_invalid_eor = 0;
+  pixels_valid = pixels_valid_zeroph = pixels_invalid = pixels_invalid_eor = 0;
   rocmap.clear();
+  for(unsigned int i = 0; i < nrocs; i++) { rocmap.insert(std::make_pair(i,0)); }
 }
 
 void CMSPixelStatistics::update(CMSPixelStatistics stats) {
@@ -40,6 +41,7 @@ void CMSPixelStatistics::update(CMSPixelStatistics stats) {
   evt_invalid += stats.evt_invalid;
   ipbus_invalid += stats.ipbus_invalid;
   pixels_valid += stats.pixels_valid;
+  pixels_valid_zeroph += stats.pixels_valid_zeroph;
   pixels_invalid += stats.pixels_invalid;
   pixels_invalid_eor += stats.pixels_invalid_eor;
   for(size_t i = 0; i < rocmap.size(); i++) { rocmap[i] += stats.rocmap[i]; }
@@ -50,23 +52,24 @@ std::string CMSPixelStatistics::get() {
   os << std::endl;
   os << "    Data blocks read : " << std::setw(8) << data_blocks << std::endl;
 
-  os << "    TB Trigger Marker: " << std::setw(8) << head_trigger << std::endl;
-  os << "    TB Data Marker:    " << std::setw(8) << head_data << std::endl;
+  os << "    TB Trigger Marker:    " << std::setw(8) << head_trigger << std::endl;
+  os << "    TB Data Marker:       " << std::setw(8) << head_data << std::endl;
 
-  os << "    Events empty:      " << std::setw(8) << evt_empty << std::endl;
-  os << "    Events valid:      " << std::setw(8) << evt_valid << std::endl;
-  os << "    Events invalid:    " << std::setw(8) << evt_invalid << std::endl;
-  os << "    IPBus Evt invalid: " << std::setw(8) << ipbus_invalid << std::endl;
+  os << "    Events empty:         " << std::setw(8) << evt_empty << std::endl;
+  os << "    Events valid:         " << std::setw(8) << evt_valid << std::endl;
+  os << "    Events invalid:       " << std::setw(8) << evt_invalid << std::endl;
+  os << "    IPBus Evt invalid:    " << std::setw(8) << ipbus_invalid << std::endl;
 
-  os << "    Pixels valid:      " << std::setw(8) << pixels_valid << std::endl;
-  os << "    Pixels invalid:    " << std::setw(8) << pixels_invalid << std::endl;
+  os << "    Pixels valid:         " << std::setw(8) << pixels_valid << std::endl;
+  os << "      with zero ph:       " << std::setw(8) << pixels_valid_zeroph << std::endl;
+  os << "    Pixels invalid:       " << std::setw(8) << pixels_invalid << std::endl;
 
   for(size_t i = 0; i < rocmap.size(); i++) { 
-    os << "     on ROC" << std::setw(2) << std::setfill('0') << i << ":         " 
-       << rocmap[i] << std::endl;
+    os << "        on ROC" << std::setw(2) << i << ":         " 
+       << std::setw(8) << rocmap[i] << std::endl;
   }
   
-  os << "     -> at end of ROC: " << std::setw(8) << pixels_invalid_eor;
+  os << "      End of ROC readout: " << std::setw(8) << pixels_invalid_eor;
   return os.str();
 }
 
@@ -203,7 +206,7 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
 }
 
 CMSPixelFileDecoder::CMSPixelFileDecoder(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile)
-  : statistics(), evt(), theROC(0), mtbStream(), cms_t(), addressLevels()
+  : statistics(rocs), evt(), theROC(0), mtbStream(), cms_t(), addressLevels()
 {
 
   LOG(logDEBUG) << "Preparing a file decoder instance...";
@@ -227,7 +230,7 @@ CMSPixelFileDecoder::CMSPixelFileDecoder(const char *FileName, unsigned int rocs
   }
 
   // Initialize the statistics counter:
-  statistics.init();
+  statistics.init(rocs);
 
   // Open the requested file stream:
   LOG(logDEBUG1) << "Open data file...";
@@ -512,7 +515,7 @@ std::string CMSPixelFileDecoder::print_addresslevels(levelset addLevels) {
 
 
 CMSPixelEventDecoder::CMSPixelEventDecoder(unsigned int rocs, int flags, uint8_t ROCTYPE)
-  : statistics(), L_HEADER(0), L_TRAILER(0), L_EMPTYEVT(0), L_GRANULARITY(0), L_HIT(0), L_ROC_HEADER(0), L_HUGE_EVENT(0), flag(flags), noOfROC(rocs), theROC(ROCTYPE)
+  : statistics(rocs), L_HEADER(0), L_TRAILER(0), L_EMPTYEVT(0), L_GRANULARITY(0), L_HIT(0), L_ROC_HEADER(0), L_HUGE_EVENT(0), flag(flags), noOfROC(rocs), theROC(ROCTYPE)
 {
 }
 
@@ -527,7 +530,7 @@ int CMSPixelEventDecoder::get_event(std::vector< uint16_t > & data, std::vector<
   statistics.data_blocks = data.size();
 
   evt->clear();
-  statistics.init();
+  statistics.init(noOfROC);
 
   unsigned int pos = 0;
   
@@ -843,6 +846,7 @@ int CMSPixelEventDecoderDigital::decode_hit(std::vector< uint16_t > data, unsign
 
     LOG(logINFO) << "HIT ROC" << std::setw(2) << pixhit->roc << " | pix " << pixhit->col << " " << pixhit->row << ", adc " << pixhit->raw;
     CMSPixelEventDecoder::statistics.pixels_valid++;
+    if(pixhit->raw == 0) CMSPixelEventDecoder::statistics.pixels_valid_zeroph++;
     return 0;
   }
   else {
@@ -969,6 +973,7 @@ int CMSPixelEventDecoderAnalog::decode_hit(std::vector< uint16_t > data, unsigne
 
     LOG(logINFO) << "HIT ROC" << std::setw(2) << pixhit->roc << " | pix " << pixhit->col << " " << pixhit->row << ", adc " << pixhit->raw;
     CMSPixelEventDecoder::statistics.pixels_valid++;
+    if(pixhit->raw == 0) CMSPixelEventDecoder::statistics.pixels_valid_zeroph++;
     return 0;
   }
   else {

@@ -95,7 +95,7 @@ namespace CMSPixel {
 
   class CMSPixelStatistics {
   public:
-    CMSPixelStatistics() :
+    CMSPixelStatistics(unsigned int nrocs = 1) :
     data_blocks(0),
       head_data(0),
       head_trigger(0),
@@ -104,10 +104,11 @@ namespace CMSPixel {
       evt_invalid(0),
       ipbus_invalid(0),
       pixels_valid(0),
+      pixels_valid_zeroph(0),
       pixels_invalid(0),
       pixels_invalid_eor(0),
-      rocmap() { init(); };
-    void init();
+      rocmap() { init(nrocs); };
+    void init(unsigned int nrocs);
     void update(CMSPixelStatistics stats);
     void print();
     std::string get();
@@ -130,6 +131,8 @@ namespace CMSPixel {
     uint32_t ipbus_invalid;
     // Number of correctly decoded pixel hits
     uint32_t pixels_valid;
+    // Number of valid pixels with pulse height zero:
+    uint32_t pixels_valid_zeroph;
     // Number of pixel hits with invalid address or zero-bit (undecodable)
     // Events containing only some invalid pixels are still delivered, only return value is set.
     uint32_t pixels_invalid;
