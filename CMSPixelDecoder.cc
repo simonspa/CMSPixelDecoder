@@ -562,7 +562,7 @@ int CMSPixelEventDecoder::get_event(std::vector< uint16_t > & data, std::vector<
 
   // Helper for checking pixel error position:
   unsigned int invalid_pixel_roc = 0;
-  bool checkroc;
+  bool checkroc = false;
 
   while(pos < L_GRANULARITY*data.size()) {
     // Try to find a new ROC header:
