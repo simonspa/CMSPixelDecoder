@@ -729,9 +729,11 @@ bool CMSPixelEventDecoder::checkPixelOrder(int col, int row) {
   // If we are still in the same column, check for the row to be higher:
   else if(lastpixel.col == col) {
     // In odd columns the next row address is supposed to be lower:
-    if(col%2 != 0 && lastpixel.row < row) {
-      LOG(logDEBUG4) << "Order is wrong! (odd col: newrow < oldrow)";
-      return false;
+    if(col%2 != 0) {
+      if(lastpixel.row < row) {
+	LOG(logDEBUG4) << "Order is wrong! (odd col: newrow < oldrow)";
+	return false;
+      }
     }
     // In even columns the next row address is supposed to be higher:
     else if(lastpixel.row > row) {
@@ -819,12 +821,12 @@ bool CMSPixelEventDecoderDigital::find_roc_header(std::vector< uint16_t > data, 
   if((flag & FLAG_ALLOW_CORRUPT_ROC_HEADERS) && (search_head == 0x7f0 || search_head == 0x7fc || search_head == 0x3f8 || search_head == 0x3f9 || search_head == 0x3fa || search_head == 0x3fb)) {
     LOG(logDEBUG2) << "Found ROC header with bit error (" 
 		   << std::hex << std::setw(3) << search_head << ") after " << std::dec << *pos << " bit.";
-    *pos += L_ROC_HEADER; // jump to next position.    
+    *pos += L_ROC_HEADER; // jump to next position.
     return true;
   }
   else if(search_head == 0x7f8 || search_head == 0x7f9 || search_head == 0x7fa || search_head == 0x7fb) {
     LOG(logDEBUG2) << "Found ROC header (" << std::hex << std::setw(3) << search_head << ") after " << std::dec << *pos << " bit.";
-    *pos += L_ROC_HEADER; // jump to next position.    
+    *pos += L_ROC_HEADER; // jump to next position.
     return true;
   }
   else return false;
