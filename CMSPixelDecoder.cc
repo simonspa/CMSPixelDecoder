@@ -563,16 +563,23 @@ int CMSPixelEventDecoder::get_event(std::vector< uint16_t > & data, std::vector<
   // Helper for checking pixel error position:
   unsigned int invalid_pixel_roc = 0;
   bool checkroc = false;
+  // Reset lastpixel pointer:
+  LOG(logDEBUG4) << "Resetting lastpixel to col 0 row 0.";
+  lastpixel.col = 0;
+  lastpixel.row = 0;
+
 
   while(pos < L_GRANULARITY*data.size()) {
     // Try to find a new ROC header:
     if(find_roc_header(data,&pos,roc+1)) {
       // Increase ROC count:
       roc++;
+
       // Reset lastpixel pointer:
       LOG(logDEBUG4) << "Resetting lastpixel to col 0 row 0.";
       lastpixel.col = 0;
       lastpixel.row = 0;
+
     }
     else {
       int hitstatus = decode_hit(data,&pos,roc,&tmp);
