@@ -31,6 +31,7 @@
 #define FLAG_16BITS_PER_WORD 8
 #define FLAG_OVERWRITE_ROC_HEADER_POS 16
 #define FLAG_OLD_RAL_FORMAT 32
+#define FLAG_NOT_DISCARD_OUTOFORDER_PIXELS 64
 
 // Decoder errors:
 #define DEC_ERROR_EMPTY_EVENT -1
@@ -168,6 +169,7 @@ namespace CMSPixel {
 
   protected:
     bool convertDcolToCol(int dcol, int pix, int & col, int & row);
+    bool checkPixelOrder(int col, int row);
 
     unsigned int L_HEADER, L_TRAILER, L_EMPTYEVT, L_GRANULARITY, L_HIT, L_ROC_HEADER, L_HUGE_EVENT;
     const int flag;
@@ -186,6 +188,8 @@ namespace CMSPixel {
     // These functions are the same no matter what data format we have:
     int pre_check_sanity(std::vector< uint16_t > * data, unsigned int * pos);
     int post_check_sanity(std::vector< pixel > * evt, unsigned int rocs);
+
+    pixel lastpixel;
 
   };
 

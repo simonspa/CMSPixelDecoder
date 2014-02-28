@@ -566,7 +566,14 @@ int CMSPixelEventDecoder::get_event(std::vector< uint16_t > & data, std::vector<
 
   while(pos < L_GRANULARITY*data.size()) {
     // Try to find a new ROC header:
-    if(find_roc_header(data,&pos,roc+1)) roc++;
+    if(find_roc_header(data,&pos,roc+1)) {
+      // Increase ROC count:
+      roc++;
+      // Reset lastpixel pointer:
+      LOG(logDEBUG4) << "Resetting lastpixel to col 0 row 0.";
+      lastpixel.col = 0;
+      lastpixel.row = 0;
+    }
     else {
       int hitstatus = decode_hit(data,&pos,roc,&tmp);
       // Pixel decoding is fine:
@@ -702,6 +709,35 @@ int CMSPixelEventDecoder::post_check_sanity(std::vector< pixel > * evt, unsigned
   return 0;
 }
 
+bool CMSPixelEventDecoder::checkPixelOrder(int col, int row) {
+  
+  LOG(logDEBUG4) << "Last pixel was: col " << lastpixel.col << " row " << lastpixel.row;
+  LOG(logDEBUG4) << "New pixel is: col " << col << " row " << row;
+
+  // If new Column is below Column of the last pixel, order is violated.
+  if(lastpixel.col > col) {
+    LOG(logDEBUG4) << "Order is wrong! (newcol > oldcol)";
+    return false;
+  }
+  // If we are still in the same column, check for the row to be higher:
+  else if(lastpixel.col == col) {
+    // In odd columns the next row address is supposed to be lower:
+    if(col%2 != 0 && lastpixel.row < row) {
+      LOG(logDEBUG4) << "Order is wrong! (odd col: newrow < oldrow)";
+      return false;
+    }
+    // In even columns the next row address is supposed to be higher:
+    else if(lastpixel.row > row) {
+      LOG(logDEBUG4) << "Order is wrong! (evencol: newrow > oldrow)";
+      return false;
+    }
+  }
+  // Everything looks fine. Update the lastpixel with these values:
+  LOG(logDEBUG4) << "Order is fine.";
+  lastpixel.col = col;
+  lastpixel.row = row;
+  return true;
+}
 
 bool CMSPixelEventDecoder::convertDcolToCol(int dcol, int pix, int & col, int & row)
 {
@@ -852,23 +888,28 @@ int CMSPixelEventDecoderDigital::decode_hit(std::vector< uint16_t > data, unsign
   int row = -1;            
 
   // Convert and check pixel address and zero bit. Returns TRUE if address is okay:
-  if( convertDcolToCol( dcol, drow, col, row ) && ((pixel_hit>>4)&1) == 0 ) {
-    pixhit->raw = pulseheight;
-    pixhit->col = col;
-    pixhit->row = row;
-    pixhit->roc = roc;
-
-    LOG(logINFO) << "HIT ROC" << std::setw(2) << pixhit->roc << " | pix " << pixhit->col << " " << pixhit->row << ", adc " << pixhit->raw;
-    CMSPixelEventDecoder::statistics.pixels_valid++;
-    if(pixhit->raw == 0) CMSPixelEventDecoder::statistics.pixels_valid_zeroph++;
-    return 0;
-  }
-  else {
-    // Something went wrong with the decoding:
+  if(!convertDcolToCol( dcol, drow, col, row ) && ((pixel_hit>>4)&1) == 0 ) {
     LOG(logWARNING) << "Failed to convert address of [" << std::hex << std::setw(6) << std::setfill('0') << pixel_hit << std::dec << "]: dcol " << dcol << " drow " << drow << " (ROC" << roc << ", adc: " << pulseheight << ")";
     CMSPixelEventDecoder::statistics.pixels_invalid++;
     return DEC_ERROR_INVALID_ADDRESS;
   }
+
+  // Check if the new pixel is supposed to be here according to the ROC readout scheme:
+  if(!checkPixelOrder(col, row) && !(flag&FLAG_NOT_DISCARD_OUTOFORDER_PIXELS)) {
+    LOG(logWARNING) << "Readout order not valid for pixel [" << std::hex << std::setw(6) << std::setfill('0') << pixel_hit << std::dec << "]: col " << col << " row " << row << " (ROC" << roc << ", adc: " << pulseheight << ")";
+    CMSPixelEventDecoder::statistics.pixels_invalid++;
+    return DEC_ERROR_INVALID_ADDRESS;	
+  }
+
+  pixhit->raw = pulseheight;
+  pixhit->col = col;
+  pixhit->row = row;
+  pixhit->roc = roc;
+
+  LOG(logINFO) << "HIT ROC" << std::setw(2) << pixhit->roc << " | pix " << pixhit->col << " " << pixhit->row << ", adc " << pixhit->raw;
+  CMSPixelEventDecoder::statistics.pixels_valid++;
+  if(pixhit->raw == 0) CMSPixelEventDecoder::statistics.pixels_valid_zeroph++;
+  return 0;
 }
 
 
@@ -979,7 +1020,19 @@ int CMSPixelEventDecoderAnalog::decode_hit(std::vector< uint16_t > data, unsigne
   int row = -1;
 
   // Convert and check pixel address from double column address. Returns TRUE if address is okay:
-  if( convertDcolToCol( dcol, drow, col, row ) ) {
+  if(!convertDcolToCol( dcol, drow, col, row ) ) {
+    LOG(logWARNING) << "Failed to convert address: dcol " << dcol << " drow " << drow << " (ROC" << roc << ", adc: " << aa << ")";
+    CMSPixelEventDecoder::statistics.pixels_invalid++;
+    return DEC_ERROR_INVALID_ADDRESS;
+  }
+
+  // Check if the new pixel is supposed to be here according to the ROC readout scheme:
+  if(!checkPixelOrder(col, row) && !(flag&FLAG_NOT_DISCARD_OUTOFORDER_PIXELS)) {
+    LOG(logWARNING) << "Readout order not valid for pixel: col " << col << " row " << row << " (ROC" << roc << ", adc: " << aa << ")";
+    CMSPixelEventDecoder::statistics.pixels_invalid++;
+    return DEC_ERROR_INVALID_ADDRESS;	
+  }
+      
     pixhit->raw = aa;
     pixhit->col = col;
     pixhit->row = row;
@@ -989,12 +1042,6 @@ int CMSPixelEventDecoderAnalog::decode_hit(std::vector< uint16_t > data, unsigne
     CMSPixelEventDecoder::statistics.pixels_valid++;
     if(pixhit->raw == 0) CMSPixelEventDecoder::statistics.pixels_valid_zeroph++;
     return 0;
-  }
-  else {
-    LOG(logWARNING) << "Failed to convert address: dcol " << dcol << " drow " << drow << " (ROC" << roc << ", adc: " << aa << ")";
-    CMSPixelEventDecoder::statistics.pixels_invalid++;
-    return DEC_ERROR_INVALID_ADDRESS;
-  }
 }
 
 int CMSPixelEventDecoderAnalog::findBin(int adc, int nlevel, std::vector< int > level ) {
