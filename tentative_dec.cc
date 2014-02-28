@@ -58,7 +58,6 @@ int main(int argc, char* argv[]) {
 
     fclose(pFile);
     global_statistics.update(decoder->statistics);
-    decoder->statistics.print();
     delete decoder;
   }
 
