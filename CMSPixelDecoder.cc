@@ -865,7 +865,7 @@ int CMSPixelEventDecoderDigital::decode_hit(std::vector< uint16_t > data, unsign
   }
   else {
     // Something went wrong with the decoding:
-    LOG(logWARNING) << "Failed to convert address of [" << std::hex << pixel_hit << std::dec << "]: dcol " << dcol << " drow " << drow << " (ROC" << roc << ", adc: " << pulseheight << ")";
+    LOG(logWARNING) << "Failed to convert address of [" << std::hex << std::setw(6) << std::setfill('0') << pixel_hit << std::dec << "]: dcol " << dcol << " drow " << drow << " (ROC" << roc << ", adc: " << pulseheight << ")";
     CMSPixelEventDecoder::statistics.pixels_invalid++;
     return DEC_ERROR_INVALID_ADDRESS;
   }
