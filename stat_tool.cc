@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
       status = decoder->get_event(evt, time);
       if(status <= DEC_ERROR_NO_MORE_DATA) { break; }
       // We want to extract bad events:
-      else if(write_badevents && status <= DEC_ERROR_EMPTY_EVENT) {
+      else if(write_badevents && status < DEC_ERROR_EMPTY_EVENT) {
 	std::vector<uint16_t> raw = decoder->get_rawdata();
 	fwrite (&raw[0], sizeof(uint16_t), raw.size(), badevents);
       }
