@@ -1,28 +1,28 @@
 CMSPixelDecoder
 ===============
 
-Generic decoding class for PSI46-type pixel detector readout chips
-
-# Overview #
-  The CMSPixelDecoder classes aim to provide a full-featured data decoder from
-  raw data read from any kind of CMS PSI46 Pixel Readout Chips or combinations
-  of them such as modules (16 ROCs) or telescopes.
+CMSPixelDecoder is a generic decoding class for PSI46-type pixel detector readout
+ chips. The CMSPixelDecoder classes aim to provide a full-featured data decoder 
+from raw data read from any kind of CMS PSI46 Pixel Readout Chips or combinations
+ of them such as modules (16 ROCs) or telescopes.
 
   The decoder can handle data
-  * from any number of ROCs
+  * from any number of ROCs (single ROCs, modules, other setups as telescopes)
   * taken with TBM, with TBM emulation or without any TBM headers
-  * from both PSI testboards and RAL testboards (IPBus)
+  * from both PSI testboards (ATB, DTB) and RAL testboards (IPBus)
+
+<!-- comment -->
 
   Both single events and full files can be decoded.
 
 # Usage #
   * Decoding of single events
     In order to decode single events (data streams read from arbitrary input)
-    one needs to instanciate a CMSPixelEvent decoder for either analog or
+    one needs to instanciate a `CMSPixelEventDecoder` for either analog or
     digital ROCs. The constructor needs to know the flags (see below), the
     number of ROCs expected as well as the ROC type (see below). For analog
     data it furthermore needs the address levels of the data stream using the
-    "levelset" struct (see CMSPixelDecoder.h)
+    "levelset" struct (see `CMSPixelDecoder.h`)
 
     Constructor for analog ROC data:
 
@@ -43,7 +43,7 @@ Generic decoding class for PSI46-type pixel detector readout chips
     $ int get_event(std::vector< int16_t > data, std::vector<pixel> * evt);
     ```
 
-    where "data" is a int16_t vector containing the raw data from the readout
+    where "data" is a `int16_t` vector containing the raw data from the readout
     system and "evt" is the decoded event, stored in a standard vector of pixel
     structs (see below).
 
@@ -62,16 +62,17 @@ Generic decoding class for PSI46-type pixel detector readout chips
     uint8_t ROCTYPE, const char *addressFile);
     ```
     
-    The decoder returns the next event read and decoded from th file when calling
-    the get_event method. In addition to single event decoding the timestamp of
-    the trigger is returned, if this data is present in the testboard event
-    headers:
+    The decoder returns the next event read and decoded from the file when 
+    calling the `get_event method`. In addition to single event decoding the time
+    stamp of the trigger is returned, if this data is present in the testboard
+    event headers:
 
     ```
-    int get_event(std::vector<pixel> * decevt, int64_t & timestamp);
+    int get_event(std::vector<pixel> * decevt, timing & dectime);
     ```
 
-    "decevt" is the decoded event (as pixel strcut vector) and "timestamp" the trigger time stamp.
+    "decevt" is the decoded event (as pixel strcut vector) and "dectime" the
+    decoded timing information (see below).
 
     The decoding statistics can be obtained for either the most recently decoded
     event or the accumulated statistics for the whole run (see below).
@@ -88,11 +89,13 @@ Generic decoding class for PSI46-type pixel detector readout chips
   * `int raw`:  the raw (uncalibrated) pulse height of the hit
   * `double vcal`: placeholder for the calibrated pulse height, not filled.
 
-  In case the `get_event()` function from the CMSPixelFileDecoder (see above)
-  in addition to that information from the event headers (added byt he test
-  boards) is returned in the `timing` struct. Note that not all test boards
-  provide all information, so some fields might be left empty. The struct
-  contains the following information:
+<!-- comment -->
+
+  In case of calling the `get_event()` function from the CMSPixelFileDecoder 
+  (see above) in addition to the data, information from the event headers 
+  (added by the test boards) is returned in the `timing` struct. Note that 
+  not all test boards provide all information, so some fields might be left
+  empty. The struct contains the following information:
 
   * `int64_t timestamp`: the timestamp provided by the test board, either in
     clock ticks of the applied clock (PSI boards) or in ticks of 1us (RAL boards)
@@ -103,6 +106,8 @@ Generic decoding class for PSI46-type pixel detector readout chips
     read out
   * `char trigger_phase`: trigger phase with respect to clock edge
   * `char data_phase`: data phase with respect to clock edge
+
+<!-- comment -->
 
   Additionally the CMSPixelFileDecoder provides a function to retrieve the raw
   data blob from the event decoded the last, independend of the success of
@@ -128,6 +133,7 @@ Generic decoding class for PSI46-type pixel detector readout chips
   correct data type and number of ROCs.
 
   Currently the following ROC types are supported:
+
   * ROC_PSI46V2
   * ROC_PSI46XDB
   * ROC_PSI46DIG
@@ -136,11 +142,13 @@ Generic decoding class for PSI46-type pixel detector readout chips
   * ROC_PSI46DIGV2
   * ROC_PSI46DIGV21
 
+<!-- comment -->
+
   Furthermore the behaviour of the decoder can be influenced using flags. The
   following flags are defined:
 
   * **FLAG_ALLOW_CORRUPT_ROC_HEADERS** - allows to decode events with malformed ROC
-    headers. This can be e.g. digital ROCs with 0x3f8 headers or
+    headers. This can be e.g. digital ROCs with `0x3fc` headers (bit shift) or
     the analog single ROC anomaly when not operated with TBM (sending
     "Black UltraBlack" instead of "UltraBlack Black").
     Do not use unless you know your data and need it desperately
@@ -162,24 +170,24 @@ Generic decoding class for PSI46-type pixel detector readout chips
     0000 XXXX XXXX XXXX -> XXXX XXXX XXXX
     ```
 
-  * **FLAG_16BITS_PER_WORD** - digital ROCs only - the RAL IPBus readout setup allows
-    to fully use the available data length by filling all 16bits of the
+  * **FLAG_16BITS_PER_WORD** - digital ROCs only - the RAL IPBus readout setup 
+    allows to fully use the available data length by filling all 16bits of the
     short. Use this flag to set for single event decoding of IPBus data.
-    when using the CMSPixelFileDecoderRAL the flag is set automatically.
-  * **FLAG_OVERWRITE_ROC_HEADER_POS** - some analog chips seem to be broken in the sense
-    that they don't send valid ROC headers or the header is cut of. This
-    flags allows to decode that data by fixing an assumed ROC header pos.
-  * **FLAG_OLD_RAL_FORMAT** - this enables data decoding of RAL IPBus data taken with the
-    first readout/ Bridge board version used exclusively in 2012 beam
-    tests. Do not use unless you know why!
-  * **FLAG_NOT_DISCARD_OUTOFORDER_PIXELS** - usually the data stream is checked for the
-    readout order of the pixels following the readout token within the ROC. This flag
-    allows to disable checking for the right pixel readout order.
+    when using the `CMSPixelFileDecoderRAL` the flag is set automatically.
+  * **FLAG_OVERWRITE_ROC_HEADER_POS** - some analog chips seem to be broken in
+    the sense that they don't send valid ROC headers or the header is cut of.
+    This flags allows to decode that data by fixing an assumed ROC header pos.
+  * **FLAG_OLD_RAL_FORMAT** - this enables data decoding of RAL IPBus data 
+    taken with the first readout/ Bridge board version used exclusively in 2012 
+    beam tests. Do not use unless you know why!
+  * **FLAG_NOT_DISCARD_OUTOFORDER_PIXELS** - usually the data stream is checked
+    for the readout order of the pixels following the readout token within the
+    ROC. This flag allows to disable checking for the right pixel readout order.
   
 # Statistics and returns #
-  CMSPixelDecoder collects decoding statistics during the run. These can either
-  be obtained by accessing the statistics struct of the respective class or by
-  printing the full statistics summary to screen.
+  The `CMSPixelDecoder` collects decoding statistics during the run. These 
+  can either be obtained by accessing the statistics struct of the respective
+  class or by printing the full statistics summary to screen.
   
   Return values provide additional information about the most recent decoding
   attempt.
@@ -275,6 +283,8 @@ Generic decoding class for PSI46-type pixel detector readout chips
    * **DEC_ERROR_NO_MORE_DATA** - the decoder reached the end of file.
    * **DEC_ERROR_INVALID_FILE** - the file pointer provided is invalid.
 
+<!-- comment -->
+
    The calling procedure can decide what to do with events of a given return
    value. The errors are ordered accoring to their severity. This makes it
    possible to use if statements like
@@ -299,6 +309,8 @@ Generic decoding class for PSI46-type pixel detector readout chips
   * **INFO**     - Prints information about found hits
   * **DEBUG**    - Informs about the current status of the decoding steps
   * **DEBUG1-4** - additional debugging levels printing even more stuff to stderr.
+
+<!-- comment -->
 
   The current logging level can be changed at any time using
   
