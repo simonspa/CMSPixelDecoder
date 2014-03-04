@@ -179,35 +179,35 @@ Generic decoding class for PSI46-type pixel detector readout chips
     Currently the following values are collected and stored until the repsective
     object is destroyed. Additional statistics can be implemented quite easily.
 
-    * uint32_t data_blocks:
+    * `uint32_t data_blocks`:
       Number of 16bit event data words processed in total. Note that this does
       contain header blocks such as trigger and timestamp numbers but only the
       event data which is delivered to the Single Event Decoder.
-    * uint32_t head_data:
+    * `uint32_t head_data`:
       Number of detected testboard data markers
-    * uint32_t head_trigger:
+    * `uint32_t head_trigger`:
       Number of detected testboard trigger markers
-    * uint32_t evt_valid:
+    * `uint32_t evt_valid`:
       Number of valid events (everything allright)
-    * uint32_t evt_empty:
+    * `uint32_t evt_empty`:
       Number of empty events (fine, but contained no pixel)
-    * uint32_t evt_invalid:
+    * `uint32_t evt_invalid`:
       Number of invalid events (something is fishy with this)
       * No ROC headers / wrong number of ROC headers
       * Missing TBM Header or Trailer
-    * uint32_t pixels_valid:
+    * `uint32_t pixels_valid`:
       Number of correctly decoded pixel hits
-      * map<unsigned int, unsigned int> rocmap_valid:
+      * `map<unsigned int, unsigned int> rocmap_valid`:
         Number of valid pixels on each ROC, ordered by their ID
-      * uint32_t pixels_valid_zeroph:
+      * `uint32_t pixels_valid_zeroph`:
         Number of pixels with correctly decoded address but pulse height zero
-    * uint32_t pixels_invalid:
+    * `uint32_t pixels_invalid`:
       Number of pixel hits with invalid address or zero-bit (undecodable)
       Events containing only some invalid pixels are still delivered, only
       return value is set.
-      * map<unsigned int, unsigned int> rocmap_invalid
+      * `map<unsigned int, unsigned int> rocmap_invalid`:
         Number of invalid pixels on each ROC, ordered by their ID
-      * uint32_t pixels_invalid_eor:
+      * `uint32_t pixels_invalid_eor`:
         Number of bad pixels occuring as the last ones in a ROC readout. After
         a bad pixel the next ROC header should appear in order to be counted.
 
