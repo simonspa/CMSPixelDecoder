@@ -134,6 +134,9 @@ Generic decoding class for PSI46-type pixel detector readout chips
   * **FLAG_OLD_RAL_FORMAT** - this enables data decoding of RAL IPBus data taken with the
     first readout/ Bridge board version used exclusively in 2012 beam
     tests. Do not use unless you know why!
+  * **FLAG_NOT_DISCARD_OUTOFORDER_PIXELS** - usually the data stream is checked for the
+    readout order of the pixels following the readout token within the ROC. This flag
+    allows to disable checking for the right pixel readout order.
   
 # Statistics and returns #
   CMSPixelDecoder collects decoding statistics during the run. These can either
@@ -194,10 +197,19 @@ Generic decoding class for PSI46-type pixel detector readout chips
       * Missing TBM Header or Trailer
     * uint32_t pixels_valid:
       Number of correctly decoded pixel hits
+      * map<unsigned int, unsigned int> rocmap_valid:
+        Number of valid pixels on each ROC, ordered by their ID
+      * uint32_t pixels_valid_zeroph:
+        Number of pixels with correctly decoded address but pulse height zero
     * uint32_t pixels_invalid:
       Number of pixel hits with invalid address or zero-bit (undecodable)
       Events containing only some invalid pixels are still delivered, only
       return value is set.
+      * map<unsigned int, unsigned int> rocmap_invalid
+        Number of invalid pixels on each ROC, ordered by their ID
+      * uint32_t pixels_invalid_eor:
+        Number of bad pixels occuring as the last ones in a ROC readout. After
+        a bad pixel the next ROC header should appear in order to be counted.
 
 # Return values of the get_event() method #
    The following return values are defined to give you even more information
@@ -236,7 +248,7 @@ Generic decoding class for PSI46-type pixel detector readout chips
    in order to stop processing when there is no more data or the file pointer
    specified is invalid.
 
-* Logging and debugging
+# Logging and debugging #
   CMSPixelDecoder has a builtin logging feature which can be used to debug the
   data decoding. It provides several logging levels, the output is directed to
   stderr. You can chose from the following detail levels:
@@ -294,11 +306,14 @@ Generic decoding class for PSI46-type pixel detector readout chips
     over a large set of files. Usage:
      
     ```
-    $ ./stat_tool LEVEL File[s...]
+    $ ./stat_tool [-v VERBOSITY -o OUTPUTFILE -n NUMROCS] File[s...]
     ```
      
-    where LEVEL is the desired verbosity level and File[s...] are any number
-    of data files. Check the correct decoding settings in the source code!
+    where VERBOSITY is the desired verbosity level and File[s...] are any number
+    of data files. OUTPUTFILE provides the possibility to log all bad events
+    into a new binary file with the name provided to have a closer look at them.
+    NUMROCS can be used to adjust the number of ROCs in the readout chain on the
+    fly. Check the correct decoding settings in the source code!
 
   * mc_background - simulation for random bit error estimates
     This tool generates random numbers as hit patterns, preceeded by a valid ROC
