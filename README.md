@@ -77,7 +77,7 @@ from raw data read from any kind of CMS PSI46 Pixel Readout Chips or combination
     The decoding statistics can be obtained for either the most recently decoded
     event or the accumulated statistics for the whole run (see below).
 
-# Output format and returned data #
+# Output Format and Returned Data #
 
   CMSPixelDecoder provides two data outputs, depending on which function is
   called. The actual pixel data is provided in any case as standard vector of 
@@ -184,7 +184,7 @@ from raw data read from any kind of CMS PSI46 Pixel Readout Chips or combination
     for the readout order of the pixels following the readout token within the
     ROC. This flag allows to disable checking for the right pixel readout order.
   
-# Statistics and returns #
+# Decoding Statistics #
   The `CMSPixelDecoder` collects decoding statistics during the run. These 
   can either be obtained by accessing the statistics struct of the respective
   class or by printing the full statistics summary to screen.
@@ -257,7 +257,7 @@ from raw data read from any kind of CMS PSI46 Pixel Readout Chips or combination
         Number of bad pixels occuring as the last ones in a ROC readout. After
         a bad pixel the next ROC header should appear in order to be counted.
 
-# Return values of the get_event method #
+# Error Codes of the get_event Method #
    The following return values are defined to give you even more information
    about the most recent decoding attempt (call of the `get_event()` method):
 
@@ -297,7 +297,7 @@ from raw data read from any kind of CMS PSI46 Pixel Readout Chips or combination
    specified is invalid. Of course one can also check for specific return values
    and take appropriate action.
 
-# Logging and debugging #
+# Logging and Debugging #
   CMSPixelDecoder has a builtin logging feature which can be used to debug the
   data decoding. It provides several logging levels, the output is directed to
   stderr. You can chose from the following detail levels:
@@ -321,7 +321,7 @@ from raw data read from any kind of CMS PSI46 Pixel Readout Chips or combination
   Be aware of the fact that enabled logging slows down the encoding by quite a
   bit. So only turn it on if you need it!
 
-# Utilities in the repository #
+# Utilities in the Repository #
   * d2h - data2histograms
 
 
