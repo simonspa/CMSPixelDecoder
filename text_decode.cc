@@ -12,7 +12,7 @@ using namespace CMSPixel;
 
 int main(int argc, char* argv[]) {
 
-  Log::ReportingLevel() = Log::FromString("SUMMARY");
+  Log::ReportingLevel() = Log::FromString("DEBUG4");
 
   std::vector<pixel> * evt = new std::vector<pixel>;
   std::vector<uint16_t> singledat;
