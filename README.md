@@ -96,6 +96,7 @@ Generic decoding class for PSI46-type pixel detector readout chips
   * ROC_PSI46DIG_TRIG
   * ROC_PSI46DIGV2_B
   * ROC_PSI46DIGV2
+  * ROC_PSI46DIGV21
 
   Furthermore the behaviour of the decoder can be influenced using flags. The
   following flags are defined:
