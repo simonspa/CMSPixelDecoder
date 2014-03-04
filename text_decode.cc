@@ -35,11 +35,15 @@ int main(int argc, char* argv[]) {
   do {
     std::string buffer;
     getline(file,buffer);
+    
+    // found last line:
+    if(buffer.compare("mpdud Enenevg ints") == 0) break;
+
     uint32_t x;
     std::stringstream ss;
     ss << std::hex << buffer;
     ss >> x;
-    std::cout << buffer << " is " << std::hex << x << std::dec << std::endl;
+    //std::cout << buffer << " is " << std::hex << x << std::dec << std::endl;
     singledat.push_back((x>>16)&0xffff);
     singledat.push_back(x&0xffff);
   } while(!file.eof());
@@ -56,7 +60,6 @@ int main(int argc, char* argv[]) {
   singledat.erase(singledat.end()-10,singledat.end());
 
   std::cout << "Data length: " << singledat.size() << std::endl;
-  for(std::vector<uint16_t>::iterator it = singledat.begin(); it != singledat.end(); ++it) std::cout << std::hex << (*it) << std::endl << std::dec;
 
   singledec = new CMSPixelEventDecoderDigital(num_rocs,FLAG_16BITS_PER_WORD,ROC_PSI46DIGV21);
 
