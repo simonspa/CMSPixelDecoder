@@ -106,7 +106,7 @@ bool CMSPixelFileDecoderPSI_DTB::process_rawdata(std::vector< uint16_t > * /*dat
 
 bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) {
 
-  // IPBus data format: we need to delete some additional headers from the test board.
+  // IPBus data format definition
   // remove padding to 32bit words at the end of the event by reading the data length.
 
   // IPBus Data Format:
@@ -126,12 +126,13 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
   //
   // NEW Trailer format with 15bytes:
   // 15 byte trailer:
-  // First 13 bytes unchanged.
-  // Byte 14 (d): lower four bits: data phase; upper four bits: trigger phase
-  // Byte 15 (e): lower four bits: event status (good event == 7); upper four bits: reserved
-
-  // FIXME apparently trigger phase is stored in upper four bits of byte 15! (just right before the "good event" marker):
-  // Byte 15: TTT00111 (only using 3bit)
+  // Byte 14: (d) next-to-last
+  //  - bits 0-5: number of stacked triggers while this event was read out
+  //  - bits 6-7: data phase with respect to clock edge (mostly for debugging)
+  // Byte 15: (e) last
+  //  - bits 0-3: event status flags
+  //  - bit 4: 1 of the second CTR pattern was used to generate this event
+  //  - bits 5-7: trigger phase with respect to clock edge
 
   // Catch strange events with corrupted length or so:
   try {
@@ -146,63 +147,85 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
     // Old dataformat has only 14bytes trailer, new format has 15bytes:
     if(ral_flags & FLAG_OLD_RAL_FORMAT) event_length -= 14;
     else event_length -= 15;
-  
-    LOG(logDEBUG4) << "IPBus event length: " << event_length << " bytes.";
+    bool even = (event_length%2 == 0);
 
-    // Read the timestamp from the trailer:
-    uint16_t stamp_pos = (event_length/2) + 8;
+    LOG(logDEBUG4) << "IPBus event length: " << event_length << " bytes (" << (even ? "even" : "odd") << ")";
 
-    uint64_t time2 = rawdata->at(stamp_pos+2);
-    uint64_t time1 = rawdata->at(stamp_pos+1);
-    uint64_t time0 = rawdata->at(stamp_pos);
+    // Read information from event trailer:
+    uint16_t trailer_pos = (event_length/2);
 
-    uint16_t phase;
-    if(ral_flags & FLAG_OLD_RAL_FORMAT) phase = 0;
-    else phase = rawdata->at(stamp_pos+3);
+    uint64_t time2 = rawdata->at(trailer_pos + 10);
+    uint64_t time1 = rawdata->at(trailer_pos + 9);
+    uint64_t time0 = rawdata->at(trailer_pos + 8);
 
-    uint64_t tnumber2 = rawdata->at(stamp_pos-2);
-    uint32_t tnumber1 = rawdata->at(stamp_pos-3);
-    uint32_t tnumber0 = rawdata->at(stamp_pos-4);
+    uint16_t nexttolast, last;
+    if(ral_flags & FLAG_OLD_RAL_FORMAT) { nexttolast = last = 0; }
+    else {
+      nexttolast = rawdata->at(trailer_pos + 10);
+      last = rawdata->at(trailer_pos + 11);
+    }
 
-    if(event_length%2 == 0) {
-      LOG(logDEBUG4) << "IPBUS even event length.";
+    uint64_t trignumber2 = rawdata->at(trailer_pos + 6);
+    uint32_t trignumber1 = rawdata->at(trailer_pos + 5);
+    uint32_t trignumber0 = rawdata->at(trailer_pos + 4);
 
-      cms_t.timestamp = ((time1<<32)&0xff00000000LLU) | 
-	((time1<<16)&0xff000000) | 
-	((time0<<16)&0xff0000) | 
-	((time0)&0xff00) | 
+    uint64_t toknumber2 = rawdata->at(trailer_pos + 8);
+    uint32_t toknumber1 = rawdata->at(trailer_pos + 7);
+    uint32_t toknumber0 = rawdata->at(trailer_pos + 6);
+
+    if(even) { // even event length
+      cms_t.trigger_number = (((trignumber1<<24)&0xff000000) |
+			      ((trignumber1<<8)&0xff0000) |
+			      ((trignumber0<<8)&0xff00) |
+			      ((trignumber0>>8)&0xff));
+
+      cms_t.token_number = (((toknumber1<<24)&0xff000000) |
+			    ((toknumber1<<8)&0xff0000) |
+			    ((toknumber0<<8)&0xff00) |
+			    ((toknumber0>>8)&0xff));
+
+      cms_t.timestamp = ((time1<<32)&0xff00000000LLU) |
+	((time1<<16)&0xff000000) |
+	((time0<<16)&0xff0000) |
+	((time0)&0xff00) |
 	((time2>>8)&0xff);
 
-      cms_t.trigger_number = (((tnumber1<<24)&0xff000000) | 
-			     ((tnumber1<<8)&0xff0000) | 
-			     ((tnumber0<<8)&0xff00) | 
-			     ((tnumber0>>8)&0xff));
-
-      cms_t.trigger_phase = (phase>>13)&0xf;
-
+      cms_t.trigger_phase = (last>>13)&0xf;
+      cms_t.data_phase = (nexttolast>>6)&0xf;
+      cms_t.triggers_stagged = (nexttolast)&0xff;
     }
-    else {
-      cms_t.timestamp = ((time2<<24)&0xff00000000LLU) | 
-	((time1<<24)&0xff000000) | 
-	((time1<<8)&0xff0000) | 
-	((time0<<8)&0xff00) | 
+    else { // odd event length
+      cms_t.trigger_number = (((trignumber2<<32)&0xff000000) |
+			      ((trignumber1<<16)&0xff0000) |
+			      ((trignumber1<<8)&0xff00) |
+			      ((trignumber0)&0xff));
+
+      cms_t.token_number = (((toknumber2<<32)&0xff000000) |
+			    ((toknumber1<<16)&0xff0000) |
+			    ((toknumber1<<8)&0xff00) |
+			    ((toknumber0)&0xff));
+
+      cms_t.timestamp = ((time2<<24)&0xff00000000LLU) |
+	((time1<<24)&0xff000000) |
+	((time1<<8)&0xff0000) |
+	((time0<<8)&0xff00) |
 	((time2)&0xff);
 
-      cms_t.trigger_number = (((tnumber2<<32)&0xff000000) | 
-			      ((tnumber1<<16)&0xff0000) | 
-			     ((tnumber1<<8)&0xff00) | 
-			     ((tnumber0)&0xff));
-
-      cms_t.trigger_phase = (phase>>5)&0xf;
-
+      cms_t.trigger_phase = (last>>5)&0xf;
+      cms_t.data_phase = (last>>14)&0xf;
+      cms_t.triggers_stagged = (last>>8)&0xff;
     }
 
+    // Cut off data not belonging to the fields:
     cms_t.trigger_phase &= 0x07;
-    //  0000:1111 = 0F
-    //  0000:0111 = 07
+    cms_t.data_phase &= 0x03;
+    cms_t.triggers_stagged &= 0x3f;
 
+    // Some debug printout:
     LOG(logDEBUG4) << "IPBus timestamp: " << std::hex << cms_t.timestamp << std::dec << " = " << cms_t.timestamp << "us.";
-    LOG(logDEBUG4) << "IPBus trigger number: " << cms_t.trigger_number;
+    LOG(logDEBUG4) << "IPBus number triggers: " << cms_t.trigger_number << ", tokens: " << cms_t.token_number;
+    LOG(logDEBUG4) << "IPBus triggers stagged: " << static_cast<int>(cms_t.triggers_stagged);
+    LOG(logDEBUG4) << "IPBus phases trigger: " << static_cast<int>(cms_t.trigger_phase) << ", data: " << static_cast<int>(cms_t.data_phase);
 
     // cut first 8 bytes from header:
     rawdata->erase(rawdata->begin(),rawdata->begin()+4);

@@ -76,7 +76,10 @@ namespace CMSPixel {
   typedef struct {
     int64_t timestamp;
     uint32_t trigger_number;
+    uint32_t token_number;
+    char triggers_stagged;
     char trigger_phase;
+    char data_phase;
   } timing;
 
   // Struct for Decoder levels
