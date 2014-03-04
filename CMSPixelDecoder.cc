@@ -626,10 +626,10 @@ int CMSPixelEventDecoder::get_event(std::vector< uint16_t > & data, std::vector<
 
   // Check sanity of output
   int status2 = post_check_sanity(evt,roc);
-  if(status2 != 0) return status;
 
-  LOG(logDEBUG) << "STATUS end of event processing, status = " << status;
-  return status;
+  // Return worst problem (minimum of error code):
+  LOG(logDEBUG) << "STATUS end of event processing, status = " << std::min(status,status2);
+  return std::min(status,status2);
 }
 
 
