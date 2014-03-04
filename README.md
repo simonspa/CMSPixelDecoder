@@ -37,14 +37,15 @@ Generic decoding class for PSI46-type pixel detector readout chips
     $ CMSPixelEventDecoderDigital(unsigned int rocs, int flags, uint8_t ROCTYPE);
     ```
 
-    the event decoding is done by calling the get_event method
+    the event decoding is done by calling the `get_event()` method
     
     ```
-    $ int get_event(std::vector< int16_t > data, std::vector<event> * evt);
+    $ int get_event(std::vector< int16_t > data, std::vector<pixel> * evt);
     ```
 
     where "data" is a int16_t vector containing the raw data from the readout
-    system and "evt" is the decoded event, stored in a event struct (see below).
+    system and "evt" is the decoded event, stored in a standard vector of pixel
+    structs (see below).
 
     The decoding statistics can be obtained by accessing the "statistics" member
     of the object. This is possible until the object is destructed. See below.
@@ -67,23 +68,60 @@ Generic decoding class for PSI46-type pixel detector readout chips
     headers:
 
     ```
-    int get_event(std::vector<event> * decevt, int64_t & timestamp);
+    int get_event(std::vector<pixel> * decevt, int64_t & timestamp);
     ```
 
-    "decevt" is the decoded event and "timestamp" the trigger time stamp.
+    "decevt" is the decoded event (as pixel strcut vector) and "timestamp" the trigger time stamp.
 
     The decoding statistics can be obtained for either the most recently decoded
     event or the accumulated statistics for the whole run (see below).
 
-  * Output format
-    The output format of the CMSPixelDecoder is a standard vector of pixels,
-    where a pixel consists of:
+# Output format and returned data #
+
+  CMSPixelDecoder provides two data outputs, depending on which function is
+  called. The actual pixel data is provided in any case as standard vector of 
+  pixel structs, where every pixel consists of:
     
-     * int roc:  the ID of the ROC from which the pixel hit has been received
-     * int col:  the decoded column ID of the pixel hit
-     * int row:  the decoded row ID of the pixel hit
-     * int raw:  the raw (uncalibrated) pulse height of the hit
-     * double vcal: placeholder for the calibrated pulse height, not filled.
+  * `int roc`:  the ID of the ROC from which the pixel hit has been received
+  * `int col`:  the decoded column ID of the pixel hit
+  * `int row`:  the decoded row ID of the pixel hit
+  * `int raw`:  the raw (uncalibrated) pulse height of the hit
+  * `double vcal`: placeholder for the calibrated pulse height, not filled.
+
+  In case the `get_event()` function from the CMSPixelFileDecoder (see above)
+  in addition to that information from the event headers (added byt he test
+  boards) is returned in the `timing` struct. Note that not all test boards
+  provide all information, so some fields might be left empty. The struct
+  contains the following information:
+
+  * `int64_t timestamp`: the timestamp provided by the test board, either in
+    clock ticks of the applied clock (PSI boards) or in ticks of 1us (RAL boards)
+  * `uint32_t trigger_number`: trigger counter starting from the begin if the run
+  * `uint32_t token_number`: counter of tokens sent to the detector since begin
+    of the run
+  * `char triggers_stagged`: number of stacked triggers while this event was
+    read out
+  * `char trigger_phase`: trigger phase with respect to clock edge
+  * `char data_phase`: data phase with respect to clock edge
+
+  Additionally the CMSPixelFileDecoder provides a function to retrieve the raw
+  data blob from the event decoded the last, independend of the success of
+  this decoding attempt:
+
+  ```
+  std::vector<uint16_t> get_rawdata();
+  ```
+  
+  The function returns a vector of `uint16_t` containing the fill data blob as
+  read from the input file. This gives e.g. the possibility to filter out corrupt
+  events for a closer analysis. The data is buffered to be fetched until the
+  next `get_event()` call, when it is replaced with the new raw data:
+
+  ```
+  if(decoder->get_event(evt, time) < DEC_ERROR_EMPTY_EVENT) {
+    std::vector<uint16_t> raw = decoder->get_rawdata();
+  }
+  ```
 
 # Configuration #
   In order to work correctly the decoder needs to be initialized with the 
@@ -211,9 +249,9 @@ Generic decoding class for PSI46-type pixel detector readout chips
         Number of bad pixels occuring as the last ones in a ROC readout. After
         a bad pixel the next ROC header should appear in order to be counted.
 
-# Return values of the get_event() method #
+# Return values of the get_event method #
    The following return values are defined to give you even more information
-   about the most recent decoding attempt (call of the get_event() method):
+   about the most recent decoding attempt (call of the `get_event()` method):
 
    * **DEC_ERROR_EMPTY_EVENT** - the event has been empty. If not caring about
                            trigger correlation just discard this event.
@@ -242,11 +280,12 @@ Generic decoding class for PSI46-type pixel detector readout chips
    possible to use if statements like
 
    ```
-   $ if(retval <= DEC_ERROR_NO_MORE_DATA) break;
+   $ if(dec->get_event(...) <= DEC_ERROR_NO_MORE_DATA) break;
    ```
 
    in order to stop processing when there is no more data or the file pointer
-   specified is invalid.
+   specified is invalid. Of course one can also check for specific return values
+   and take appropriate action.
 
 # Logging and debugging #
   CMSPixelDecoder has a builtin logging feature which can be used to debug the
