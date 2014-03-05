@@ -56,33 +56,53 @@ void CMSPixelStatistics::update(CMSPixelStatistics stats) {
 std::string CMSPixelStatistics::get() {
   std::stringstream os;
   os << std::endl;
+  os << " Data decoded using CMSPixelDecoder v" << std::endl;
+  os << " ---------------------------------" << std::endl;
   os << "    Data blocks read:     " << std::setw(8) << data_blocks << std::endl;
   os << "    TB Trigger Marker:    " << std::setw(8) << head_trigger << std::endl;
   os << "    TB Data Marker:       " << std::setw(8) << head_data << std::endl;
   os << "   -------------------------------" << std::endl;
   os << "    Events empty:         " << std::setw(8) << evt_empty << std::endl;
   os << "    Events valid:         " << std::setw(8) << evt_valid << std::endl;
-  os << "    Events invalid:       " << std::setw(8) << evt_invalid << std::endl;
-  os << "    IPBus Evt invalid:    " << std::setw(8) << ipbus_invalid << std::endl;
+
+  os << "    Events invalid:       " << std::setw(8) << evt_invalid;
+  if(head_data != 0) { os << "  (" << std::setprecision(2) << std::scientific << static_cast<float>(evt_invalid)/head_data << ")"; }
+  os << std::endl;
+
+  os << "    IPBus Evt invalid:    " << std::setw(8) << ipbus_invalid;
+  if(head_data != 0) { os << "  (" << std::setprecision(2) << std::scientific << static_cast<float>(ipbus_invalid)/head_data << ")"; }
+  os << std::endl;
+
   os << "   -------------------------------" << std::endl;
   os << "    Pixels valid:         " << std::setw(8) << pixels_valid << std::endl;
 
   for(size_t i = 0; i < rocmap_valid.size(); i++) { 
     os << "        on ROC" << std::setw(2) << i << ":         " 
-       << std::setw(8) << rocmap_valid[i] << std::endl;
+       << std::setw(8) << rocmap_valid[i]; 
+
+    if(pixels_valid != 0) { os << "    (" << std::setw(5) << std::setprecision(2) << std::fixed << static_cast<float>(rocmap_valid[i])/pixels_valid*100 << "%)"; }
+    os << std::endl;
   }
 
-  os << "      with zero ph:       " << std::setw(8) << pixels_valid_zeroph << std::endl;
-  os << "   -------------------------------" << std::endl;
-  os << "    Pixels invalid:       " << std::setw(8) << pixels_invalid << std::endl;
+  os << "      with zero ph:       " << std::setw(8) << pixels_valid_zeroph;
+  if(pixels_valid != 0) { os << "  (" << std::setprecision(2) << std::scientific << static_cast<float>(pixels_valid_zeroph)/pixels_valid << ")"; }
+  os << std::endl;
 
-  for(size_t i = 0; i < rocmap_invalid.size(); i++) { 
+  os << "   -------------------------------" << std::endl;
+  os << "    Pixels invalid:       " << std::setw(8) << pixels_invalid;
+  if(pixels_valid != 0) { os << "  (" << std::setprecision(2) << std::scientific << static_cast<float>(pixels_invalid)/(pixels_invalid + pixels_valid) << ")"; }
+  os << std::endl;
+
+  for(size_t i = 0; i < rocmap_invalid.size(); i++) {
     os << "        on ROC" << std::setw(2) << i << ":         " 
-       << std::setw(8) << rocmap_invalid[i] << std::endl;
+       << std::setw(8) << rocmap_invalid[i];
+    if(pixels_invalid != 0) { os << "    (" << std::setw(5) << std::setprecision(2) << std::fixed << static_cast<float>(rocmap_invalid[i])/pixels_invalid*100 << "%)"; }
+    os << std::endl;
   }
   
-  os << "      End of ROC readout: " << std::setw(8) << pixels_invalid_eor << std::endl;
-  os << "   -------------------------------";
+  os << "      End of ROC readout: " << std::setw(8) << pixels_invalid_eor;
+  if(pixels_valid != 0) { os << "  (" << std::setprecision(2) << std::scientific << static_cast<float>(pixels_invalid_eor)/pixels_valid << ")"; }
+  os << std::endl << "   -------------------------------";
   return os.str();
 }
 
