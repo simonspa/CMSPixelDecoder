@@ -957,16 +957,10 @@ void CMSPixelEventDecoderDigital::readback_evaluation(int header, unsigned int r
     bool updated = false;
     // If we reached bit 16 we are done:
     if(readback_pos[roc] == 16) { 
-      //LOG(logDEBUG4) 
-      /*      std::ostringstream os;
-      os << "Readback word on ROC " << roc << " finalized. Value: " << readback_buffer[roc] << " | ";
-      for(int i = 15; i >= 0; i--) {
-	os << ((readback_buffer[roc]>>i)&1);
-      }
-      LOG(logDEBUG4) << os.str();*/
-      // Clear the readback value before proceeding:
       updated = true;
+      // Update the return value:
       readback_value[roc] = readback_buffer[roc];
+      // Clear the readback value before proceeding:
       readback_buffer[roc] = 0;
     }
 
