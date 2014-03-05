@@ -44,7 +44,7 @@ from raw data read from any kind of CMS PSI46 Pixel Readout Chips or combination
     ```
 
     where "data" is a `int16_t` vector containing the raw data from the readout
-    system and "evt" is the decoded event, stored in a standard vector of pixel
+    system and "evt" is the decoded event, stored in a standard vector of `pixel`
     structs (see below).
 
     The decoding statistics can be obtained by accessing the "statistics" member
@@ -79,9 +79,16 @@ from raw data read from any kind of CMS PSI46 Pixel Readout Chips or combination
 
 # Output Format and Returned Data #
 
-  CMSPixelDecoder provides two data outputs, depending on which function is
-  called. The actual pixel data is provided in any case as standard vector of 
-  pixel structs, where every pixel consists of:
+  CMSPixelDecoder provides two overloaded `get_event()` methods, mostly for
+  backwards compatibility. For the CMSPixelEventDecoder these are:
+
+  ```
+  int get_event(std::vector< uint16_t > & data, std::vector<pixel> * evt);
+  int get_event(std::vector< uint16_t > & data, std::vector<uint16_t> * readbac
+  ```
+
+  where "evt" is the actual pixel data which is provided in any case as standard 
+  vector of `pixel` structs, where every pixel consists of:
     
   * `int roc`:  the ID of the ROC from which the pixel hit has been received
   * `int col`:  the decoded column ID of the pixel hit
@@ -91,9 +98,26 @@ from raw data read from any kind of CMS PSI46 Pixel Readout Chips or combination
 
 <!-- comment -->
 
-  In case of calling the `get_event()` function from the CMSPixelFileDecoder 
-  (see above) in addition to the data, information from the event headers 
-  (added by the test boards) is returned in the `timing` struct. Note that 
+  The second possible return is `readback`, a vector of `uint16_t` values
+  representing the latest values recorded using the readback mechanism
+  of each ROC. Note that these values are only filled if a digital ROC V2+ is
+  attached and correctly configured (see "Configuration" below).
+
+  The readback mechanism updates the values every 16 tokens, for events inbetween
+  the old values are returned. If the datastream doesn't contain enough
+  consecutive events with valid ROC headers, the values will not be updated until
+  the next 16 valid events in a row.
+
+  The CMSPixelFileDecoder class also provides two versions of its `get_event()`
+  method:
+
+  ```
+  int get_event(std::vector<pixel> * decevt, timing & evt_timing);
+  int get_event(std::vector<pixel> * decevt, std::vector<uint16_t> * readback, timing & evt_timing);
+  ```
+  
+  With the tesboard headers being present it is possible to return additional
+  information for every event. This is done via the `timing` struct. Note that 
   not all test boards provide all information, so some fields might be left
   empty. The struct contains the following information:
 
