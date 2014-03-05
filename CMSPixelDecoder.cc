@@ -263,10 +263,9 @@ CMSPixelFileDecoder::CMSPixelFileDecoder(const char *FileName, unsigned int rocs
 
   // Open the requested file stream:
   LOG(logDEBUG1) << "Open data file \"" << std::string(FileName) << "\"...";
-  if((mtbStream = fopen(FileName,"r")) == NULL)
-    LOG(logERROR) << " ...could not open file!";
-  else
+  if((mtbStream = fopen(FileName,"r")) != NULL) {
     LOG(logDEBUG1) << " ...successfully.";
+  }
 }
 
 CMSPixelFileDecoder::~CMSPixelFileDecoder() {
