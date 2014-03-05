@@ -306,7 +306,6 @@ namespace CMSPixel {
     uint8_t theROC;
     virtual bool readWord(uint16_t &word);
     FILE * mtbStream;
-    //int64_t cmstime;
     timing cms_t;
     std::vector<uint16_t> lastevent_raw;
 
