@@ -353,19 +353,19 @@ bool CMSPixelStreamDecoderRAL::chop_datastream(std::vector< uint16_t > * rawdata
   LOG(logDEBUG1) << "Chopping datastream at IPBus headers...";
 
   while (!word_is_header(*datait)) {
-    if(datait == datablob->end()) return false;
     LOG(logDEBUG1) << "STATUS drop: " << std::hex << (*datait) << std::dec;
-    datait++;
+    if(datait++ == datablob->end()) return false;
   }
 
   LOG(logDEBUG) << "STATUS data header     : " << std::hex << (*datait) << std::dec;
   statistics.head_data++;
 
   // read some more words after header:
-  datait+=2;
-          
+  if(datait++ == datablob->end()) return false;
+  if(datait++ == datablob->end()) return false;
+
   // read the data until the next IPBus header arises:
-  while(!word_is_header(*datait) && datait != datablob->end()){
+  while(datait != datablob->end() && !word_is_header(*datait)){
     rawdata->push_back(((*datait>>8)&0x00ff) | ((*datait<<8)&0xff00));
     rawdata->push_back(((*datait>>24)&0x00ff) | ((*datait>>8)&0xff00));
     datait++;

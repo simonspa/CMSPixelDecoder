@@ -349,7 +349,7 @@ namespace CMSPixel {
     std::vector<uint32_t>::iterator datait;
     inline bool word_is_header(uint32_t word) {
       // IPBus format starts with 0xFFFFFFFF, no other headers allowed.
-      if(word == 0xFFFFFFFF) return true;
+      if(word == 0xffffffff) return true;
       else return false;
     };
   };
