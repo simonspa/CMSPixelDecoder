@@ -227,6 +227,13 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
   return true;
 }
 
+CMSPixelStreamDecoderRAL::CMSPixelStreamDecoderRAL(std::vector<uint32_t> * datastream, unsigned int rocs, int flags, uint8_t ROCTYPE) : CMSPixelFileDecoderRAL("", rocs, flags, ROCTYPE) {
+  // Assign the pointer to our input data stream:
+  datablob = datastream;
+  // Set iterator to the beginning:
+  datait = datablob->begin();
+}
+
 CMSPixelFileDecoder::CMSPixelFileDecoder(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile)
   : statistics(rocs), evt(), theROC(0), mtbStream(), cms_t(), addressLevels()
 {
@@ -328,6 +335,35 @@ bool CMSPixelFileDecoderRAL::readWord(uint16_t &word) {
     return false;
   // Do not swap endianness in the IPBus case:
   word = (a << 8) | b;
+  return true;
+}
+
+bool CMSPixelStreamDecoderRAL::chop_datastream(std::vector< uint16_t > * rawdata) {
+  rawdata->clear();
+    
+  LOG(logDEBUG1) << "Chopping datastream at IPBus headers...";
+
+  while (!word_is_header(*datait)) {
+    if(datait == datablob->end()) return false;
+    LOG(logDEBUG1) << "STATUS drop: " << std::hex << (*datait) << std::dec;
+    datait++;
+  }
+
+  LOG(logDEBUG) << "STATUS data header     : " << std::hex << (*datait) << std::dec;
+  statistics.head_data++;
+
+  // read some more words after header:
+  datait+=2;
+          
+  // read the data until the next IPBus header arises:
+  while(!word_is_header(*datait) && datait != datablob->end()){
+    rawdata->push_back(((*datait>>8)&0x00ff) | ((*datait<<8)&0xff00));
+    rawdata->push_back(((*datait>>24)&0x00ff) | ((*datait>>8)&0xff00));
+    datait++;
+  }
+
+  LOG(logDEBUG1) << "Raw data array size: " << rawdata->size() << ", so " << 16*rawdata->size() << " bits.";
+    
   return true;
 }
 
