@@ -273,9 +273,18 @@ CMSPixelFileDecoder::~CMSPixelFileDecoder() {
   LOG(logSUMMARY) << statistics.get();
 }
 
+bool CMSPixelFileDecoder::check_data() {
+  if(!mtbStream) return false;
+  else return true;
+}
+
+bool CMSPixelStreamDecoderRAL::check_data() {
+  return true;
+}
+
 int CMSPixelFileDecoder::get_event(std::vector<pixel> * decevt, timing & evt_timing) {
   // Check if stream is open:
-  if(!mtbStream) return DEC_ERROR_INVALID_FILE;
+  if(!check_data()) { return DEC_ERROR_INVALID_FILE; }
 
   // Clear the data from previous decoding:
   lastevent_raw.clear();
@@ -402,7 +411,7 @@ bool CMSPixelFileDecoderRAL::chop_datastream(std::vector< uint16_t > * rawdata) 
   //else LOG(logDEBUG4) << "Double-checked header, was " << std::hex << word << std::dec;
   
   LOG(logDEBUG1) << "Raw data array size: " << rawdata->size() << ", so " << 16*rawdata->size() << " bits.";
-    
+
   // Rewind one word to detect the header correctly later on:
   fseek(mtbStream , -4 , SEEK_CUR);
   

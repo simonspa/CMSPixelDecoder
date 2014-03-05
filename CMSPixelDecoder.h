@@ -300,6 +300,8 @@ namespace CMSPixel {
   protected:
     uint8_t theROC;
     virtual bool readWord(uint16_t &word);
+    virtual bool check_data();
+
     FILE * mtbStream;
     timing cms_t;
     std::vector<uint16_t> lastevent_raw;
@@ -342,6 +344,7 @@ namespace CMSPixel {
     ~CMSPixelStreamDecoderRAL() {};
   private:
     bool chop_datastream(std::vector< uint16_t > * rawdata);
+    bool check_data();
     std::vector<uint32_t> *datablob;
     std::vector<uint32_t>::iterator datait;
     inline bool word_is_header(uint32_t word) {
