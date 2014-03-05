@@ -872,12 +872,20 @@ bool CMSPixelEventDecoder::convertDcolToCol(int dcol, int pix, int & col, int & 
 /*          decoding DIGITAL chip data                                    */
 /*========================================================================*/
 
-CMSPixelEventDecoderDigital::CMSPixelEventDecoderDigital(unsigned int rocs, int flags, uint8_t ROCTYPE) : CMSPixelEventDecoder(rocs, flags, ROCTYPE)
+CMSPixelEventDecoderDigital::CMSPixelEventDecoderDigital(unsigned int rocs, int flags, uint8_t ROCTYPE) : CMSPixelEventDecoder(rocs, flags, ROCTYPE), readback_pos(), readback_buffer(), readback_value()
 {
   LOG(logDEBUG) << "Preparing a digital event decoder instance, ROC type " << static_cast<int>(ROCTYPE) << "...";
   // Loading constants and flags:
   LOG(logDEBUG2) << "Loading constants...";
   load_constants(flags);
+
+  for(unsigned int i = 0; i < rocs; i++) { 
+    // Initialize with position outside data word, wait till first status bit arrives:
+    readback_pos.insert(std::make_pair(i,17));
+    // Initialize readback value with 0:
+    readback_buffer.insert(std::make_pair(i,0));
+    readback_value.insert(std::make_pair(i,0));
+  }
 }
 
 std::string CMSPixelEventDecoderDigital::print_data(std::vector< uint16_t> * data) {
@@ -913,7 +921,7 @@ int CMSPixelEventDecoderDigital::get_bits(std::vector< uint16_t > data, int bit_
   return value;
 }
 
-bool CMSPixelEventDecoderDigital::find_roc_header(std::vector< uint16_t > data, unsigned int * pos, unsigned int)
+bool CMSPixelEventDecoderDigital::find_roc_header(std::vector< uint16_t > data, unsigned int * pos, unsigned int roc)
 {
   // ROC header: 0111 1111 10SD, S & D are reserved status bits.
   // Possible ROC headers: 0x7f8 0x7f9 0x7fa 0x7fb
@@ -928,10 +936,51 @@ bool CMSPixelEventDecoderDigital::find_roc_header(std::vector< uint16_t > data, 
   }
   else if(search_head == 0x7f8 || search_head == 0x7f9 || search_head == 0x7fa || search_head == 0x7fb) {
     LOG(logDEBUG2) << "Found ROC header (" << std::hex << std::setw(3) << search_head << ") after " << std::dec << *pos << " bit.";
+
+    // Evaluate the readback mechanismn data:
+    readback_evaluation(search_head,roc);
+
     *pos += L_ROC_HEADER; // jump to next position.
     return true;
   }
   else return false;
+}
+
+void CMSPixelEventDecoderDigital::readback_evaluation(int header, unsigned int roc) {
+    // Let's read out the information from the ROC header (readback mechanism):
+    if(readback_pos[roc] < 16) {
+      // Only read data if we know where we are in the data word...
+      readback_buffer[roc] |= (header&0x001)<<(15-readback_pos[roc]); //FIXME: Do we have to invert this?
+      readback_pos[roc]++;
+    }
+
+    bool updated = false;
+    // If we reached bit 16 we are done:
+    if(readback_pos[roc] == 16) { 
+      //LOG(logDEBUG4) 
+      /*      std::ostringstream os;
+      os << "Readback word on ROC " << roc << " finalized. Value: " << readback_buffer[roc] << " | ";
+      for(int i = 15; i >= 0; i--) {
+	os << ((readback_buffer[roc]>>i)&1);
+      }
+      LOG(logDEBUG4) << os.str();*/
+      // Clear the readback value before proceeding:
+      updated = true;
+      readback_value[roc] = readback_buffer[roc];
+      readback_buffer[roc] = 0;
+    }
+
+    if((header&0x002) != 0) { // S - status bit
+      // Found status bit, readout starts in the next cycle!
+      readback_pos[roc] = 0;
+    }
+
+    LOG(logDEBUG4) << "Readback ROC " << roc << ": Pos " << readback_pos[roc] 
+		   << " Head: " << std::hex << header << std::dec << " "
+		   << ( (header&0x002) != 0 ? "(S)" : "( )") 
+		   << " (D" << (header&0x001) << ")"
+		   << " Value " << readback_value[roc]
+		   << (updated ? "*" : "");
 }
 
 bool CMSPixelEventDecoderDigital::find_tbm_trailer(std::vector< uint16_t > data, unsigned int pos)

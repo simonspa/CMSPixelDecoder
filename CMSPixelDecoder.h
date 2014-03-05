@@ -244,7 +244,7 @@ namespace CMSPixel {
  
   class CMSPixelEventDecoderDigital : public CMSPixelEventDecoder {
   public:
-    CMSPixelEventDecoderDigital(unsigned int rocs, int flags, uint8_t ROCTYPE);
+  CMSPixelEventDecoderDigital(unsigned int rocs, int flags, uint8_t ROCTYPE);
 
   protected:
     inline void load_constants(int flags) {
@@ -276,6 +276,12 @@ namespace CMSPixel {
     int get_bits(std::vector< uint16_t > data, int bit_offset,int number_of_bits);
     std::string print_data(std::vector< uint16_t> * data);
     std::string print_hit(int hit);
+
+    // Readback values and data stream positions for every ROC independently:
+    void readback_evaluation(int header, unsigned int roc);
+    std::map<unsigned int, size_t> readback_pos;
+    std::map<unsigned int, uint16_t> readback_buffer;
+    std::map<unsigned int, uint16_t> readback_value;
   };
 
 
