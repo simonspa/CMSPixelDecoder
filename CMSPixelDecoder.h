@@ -336,6 +336,21 @@ namespace CMSPixel {
     bool process_rawdata(std::vector< uint16_t > * rawdata);
   };
 
+  class CMSPixelStreamDecoderRAL : public CMSPixelFileDecoderRAL {
+  public:
+  CMSPixelStreamDecoderRAL(std::vector<uint32_t> * datastream, unsigned int rocs, int flags, uint8_t ROCTYPE);
+    ~CMSPixelStreamDecoderRAL() {};
+  private:
+    bool chop_datastream(std::vector< uint16_t > * rawdata);
+    std::vector<uint32_t> *datablob;
+    std::vector<uint32_t>::iterator datait;
+    inline bool word_is_header(uint32_t word) {
+      // IPBus format starts with 0xFFFFFFFF, no other headers allowed.
+      if(word == 0xFFFFFFFF) return true;
+      else return false;
+    };
+  };
+
 class CMSPixelFileDecoderPSI_ATB : public CMSPixelFileDecoder {
   public:
   CMSPixelFileDecoderPSI_ATB(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile) : CMSPixelFileDecoder(FileName, rocs, flags, ROCTYPE, addressFile) {};
