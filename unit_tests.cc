@@ -506,14 +506,15 @@ bool test_telescope_ral2()
   // REFERENCE:
   CMSPixelStatistics ref;
   ref.head_trigger = 0;
-  ref.head_data = 156123;
-  ref.evt_empty = 95080;
-  ref.evt_valid = 61037;
-  ref.pixels_valid = 440936;
-  ref.evt_invalid = 5;
-  ref.pixels_invalid = 3;
+  ref.head_data = 507934;
+  ref.evt_empty = 309292;
+  ref.evt_valid = 198621;
+  ref.pixels_valid = 1413302;
+  ref.evt_invalid = 0;
+  ref.ipbus_invalid = 20;
+  ref.pixels_invalid = 4;
 
-  double ref_timing = 10.7;
+  double ref_timing = 24.3;
 
   std::vector<pixel> * evt = new std::vector<pixel>;
   timing time;
