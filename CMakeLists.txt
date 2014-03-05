@@ -7,8 +7,10 @@ option(BUILD_TOOLS "Build the CMSPixelDecoder testing tools" OFF)
 option(BUILD_D2H "Build the d2h data conversion tools" OFF)
 
 # Library Version
-SET(CMSPIXELDECODER_LIB_VERSION "3.5.0")
+SET(CMSPIXELDECODER_LIB_VERSION "3.5.2")
 SET(CMSPIXELDECODER_LIB_SOVERSION "3")
+
+CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/cmake/version.cmake.h" "${CMAKE_CURRENT_BINARY_DIR}/version.h" @ONLY)
 
 SET(GCC_COMPILE_FLAGS "-Wall -Wextra -g -Wno-deprecated -ansi -pedantic -Wno-long-long")
 SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COMPILE_FLAGS}" )
@@ -35,6 +37,7 @@ LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake )
 
 # Preparing the build of the shared decoder library
 SET(cmspixeldecoder_source_files CMSPixelDecoder.cc CMSPixelDecoder.h)
+INCLUDE_DIRECTORIES("${CMAKE_CURRENT_BINARY_DIR}")
 
 ADD_LIBRARY(CMSPixelDecoder SHARED ${cmspixeldecoder_source_files})
 SET (DEC_LIB ${DEC_LIB} CMSPixelDecoder)

@@ -24,6 +24,8 @@
 #include <sys/time.h>
 #include <sys/types.h>
 
+#include "version.h"
+
 // Flags:
 #define FLAG_ALLOW_CORRUPT_ROC_HEADERS 1
 #define FLAG_HAVETBM 2

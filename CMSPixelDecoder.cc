@@ -56,7 +56,7 @@ void CMSPixelStatistics::update(CMSPixelStatistics stats) {
 std::string CMSPixelStatistics::get() {
   std::stringstream os;
   os << std::endl;
-  os << " Data decoded using CMSPixelDecoder v" << std::endl;
+  os << " Data decoded using CMSPixelDecoder v" << DECODER_VERSION << std::endl;
   os << " ---------------------------------" << std::endl;
   os << "    Data blocks read:     " << std::setw(8) << data_blocks << std::endl;
   os << "    TB Trigger Marker:    " << std::setw(8) << head_trigger << std::endl;
