@@ -90,20 +90,6 @@ void CMSPixelStatistics::print() {
   LOG(logSUMMARY) << get();
 }
 
-bool CMSPixelFileDecoderPSI_ATB::process_rawdata(std::vector< uint16_t > * /*data*/)
-{
-  // Currently nothing to do here...
-  LOG(logDEBUG4) << "No need for raw data processing with PSI ATB.";
-  return true;
-}
-
-bool CMSPixelFileDecoderPSI_DTB::process_rawdata(std::vector< uint16_t > * /*data*/) 
-{
-  // Currently nothing to do here...
-  LOG(logDEBUG4) << "No need for raw data processing with PSI DTB.";
-  return true;
-}
-
 bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) {
 
   // IPBus data format definition
@@ -345,7 +331,49 @@ bool CMSPixelFileDecoderRAL::readWord(uint16_t &word) {
   return true;
 }
 
-bool CMSPixelFileDecoder::chop_datastream(std::vector< uint16_t > * rawdata) {
+bool CMSPixelFileDecoderRAL::chop_datastream(std::vector< uint16_t > * rawdata) {
+
+  uint16_t word;
+  rawdata->clear();
+    
+  LOG(logDEBUG1) << "Chopping datastream at IPBus headers...";
+  if(!readWord(word)) return false;
+
+  while (!word_is_header(word)) {
+    LOG(logDEBUG1) << "STATUS drop: " << std::hex << word << std::dec;
+    if(!readWord(word)) return false;
+  }
+
+  LOG(logDEBUG) << "STATUS data header     : " << std::hex << word << std::dec;
+  statistics.head_data++;
+
+  // read 3 more words after header:
+  for(int i = 1; i < 4; i++) if(!readWord(word)) return false;
+            
+  // read the data until the next MTB header arises:
+  if(!readWord(word)) return false;
+  while( !word_is_header(word) && !feof(mtbStream)){
+    rawdata->push_back(word);
+    if(!readWord(word)) return false;
+  }
+
+  //FIXME For IPBus readout check the next header words, too - they should be header again:
+  if(!readWord(word)) return false;
+  //  if(!word_is_2nd_header(word)) {
+  //  rawdata->push_back(word);
+  //  goto morewords;
+  // }
+  //else LOG(logDEBUG4) << "Double-checked header, was " << std::hex << word << std::dec;
+  
+  LOG(logDEBUG1) << "Raw data array size: " << rawdata->size() << ", so " << 16*rawdata->size() << " bits.";
+    
+  // Rewind one word to detect the header correctly later on:
+  fseek(mtbStream , -4 , SEEK_CUR);
+  
+  return true;
+}
+
+bool CMSPixelFileDecoderPSI_ATB::chop_datastream(std::vector< uint16_t > * rawdata) {
 
   uint16_t word;
   rawdata->clear();
@@ -395,14 +423,7 @@ bool CMSPixelFileDecoder::chop_datastream(std::vector< uint16_t > * rawdata) {
     if(!readWord(word)) return false;
   }
 
-  //FIXME For IPBus readout check the next header words, too - they should be header again:
   if(!readWord(word)) return false;
-  //  if(!word_is_2nd_header(word)) {
-  //  rawdata->push_back(word);
-  //  goto morewords;
-  // }
-  //else LOG(logDEBUG4) << "Double-checked header, was " << std::hex << word << std::dec;
-  
   LOG(logDEBUG1) << "Raw data array size: " << rawdata->size() << ", so " << 16*rawdata->size() << " bits.";
     
   // Rewind one word to detect the header correctly later on:

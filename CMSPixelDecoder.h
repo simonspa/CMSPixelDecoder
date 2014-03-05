@@ -292,12 +292,7 @@ namespace CMSPixel {
 
     int get_event(std::vector<pixel> * decevt, timing & evt_timing);
     virtual std::vector<uint16_t> get_rawdata();
-
-    virtual bool word_is_data(unsigned short word) = 0;
-    virtual bool word_is_trigger(unsigned short word) = 0;
-    virtual bool word_is_header(unsigned short word) = 0;
-    virtual bool word_is_2nd_header(unsigned short word) = 0;
-    virtual bool process_rawdata(std::vector< uint16_t > * rawdata) = 0;
+    virtual bool process_rawdata(std::vector< uint16_t > * /*rawdata*/) { return true; };
 
     CMSPixelStatistics statistics;
     CMSPixelEventDecoder * evt;
@@ -309,7 +304,7 @@ namespace CMSPixel {
     timing cms_t;
     std::vector<uint16_t> lastevent_raw;
 
-    virtual bool chop_datastream(std::vector< uint16_t > * rawdata);
+    virtual bool chop_datastream(std::vector< uint16_t > * rawdata) = 0;
 
   private:
     bool read_address_levels(const char* levelsFile, unsigned int rocs, levelset & addressLevels);
@@ -323,23 +318,14 @@ namespace CMSPixel {
     ~CMSPixelFileDecoderRAL() {};
     std::vector<uint16_t> get_rawdata();
   private:
+    bool chop_datastream(std::vector< uint16_t > * rawdata);
     int ral_flags;
     inline int addflags(int flags) {
       return (flags | FLAG_16BITS_PER_WORD);
     };
     bool readWord(uint16_t &word);
-    inline bool word_is_data(unsigned short word) {
-      // IPBus format starts with 0xFFFFFFFF, no other headers allowed.
-      if(word == 0xFFFF) return true;
-      else return false;
-    };
-    inline bool word_is_trigger(unsigned short word) {
-      // IPBus format doesn't know about trigger headers.
-      (void)word;
-      return false;
-    };
     inline bool word_is_header(unsigned short word) {
-      // IPBus format doesn't know about headers other than data headers.
+      // IPBus format starts with 0xFFFFFFFF, no other headers allowed.
       if(word == 0xFFFF) return true;
       else return false;
     };
@@ -355,6 +341,7 @@ class CMSPixelFileDecoderPSI_ATB : public CMSPixelFileDecoder {
   CMSPixelFileDecoderPSI_ATB(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile) : CMSPixelFileDecoder(FileName, rocs, flags, ROCTYPE, addressFile) {};
     ~CMSPixelFileDecoderPSI_ATB() {};
   private:
+    bool chop_datastream(std::vector< uint16_t > * rawdata);
     inline bool word_is_data(unsigned short word) {
       if(word == 0x8001 || word == 0x8081 || word == 0x8005) return true;
       else return false;
@@ -367,12 +354,6 @@ class CMSPixelFileDecoderPSI_ATB : public CMSPixelFileDecoder {
       if(word == 0x8001 || word == 0x8081 || word == 0x8005 || word == 0x8004 || word == 0x8002 || word == 0x8008 || word == 0x8010) return true;
       else return false;
     };
-    inline bool word_is_2nd_header(unsigned short word) {
-      // PSI ATB features 16bit headers only.
-      (void)word;
-      return true;
-    };
-    bool process_rawdata(std::vector< uint16_t > * rawdata);
   };
 
 class CMSPixelFileDecoderPSI_DTB : public CMSPixelFileDecoder {
@@ -386,10 +367,6 @@ class CMSPixelFileDecoderPSI_DTB : public CMSPixelFileDecoder {
       if((word&0xF000) > 0x0000) return true;
       else return false;
     };
-    inline bool word_is_trigger(unsigned short /*word*/) { return false; };
-    inline bool word_is_header(unsigned short /*word*/) { return true; };
-    inline bool word_is_2nd_header(unsigned short /*word*/) { return true; }
-    bool process_rawdata(std::vector< uint16_t > * rawdata);
   };
 
 
