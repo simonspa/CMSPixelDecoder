@@ -10,6 +10,7 @@
 /*==========================================================================*/
 
 #include "CMSPixelDecoder.h"
+#include "version.h"
 
 #include <cstring>
 #include <string>
