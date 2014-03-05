@@ -173,6 +173,11 @@ bool compare(CMSPixelStatistics reference, CMSPixelStatistics measurement)
 	      << " != meas " << measurement.evt_invalid << std::endl;
     return false;
   }
+  if(reference.ipbus_invalid != measurement.ipbus_invalid) {
+    std::cout << "ipval ref " << reference.ipbus_invalid
+	      << " != meas " << measurement.ipbus_invalid << std::endl;
+    return false;
+  }
   if(reference.pixels_valid != measurement.pixels_valid) {
     std::cout << "pxval ref " << reference.pixels_valid
 	      << " != meas " << measurement.pixels_valid << std::endl;
