@@ -753,15 +753,8 @@ int CMSPixelEventDecoder::pre_check_sanity(std::vector< uint16_t > * data, unsig
   }
   else LOG(logDEBUG2) << "Not checking for TBM presence.";
 
-  // Checking for empty events and skip them if necessary:
-  // FIXME maybe skip this check to make it more flexible and thorough? Emptiness will be checked after decoding...
-  if( length <= noOfROC*L_ROC_HEADER ){
-    LOG(logINFO) << "Event is empty, " << length << " words <= " <<  noOfROC*L_ROC_HEADER << ".";
-    statistics.evt_empty++;
-    return DEC_ERROR_EMPTY_EVENT;
-  }
   // There might even be a huge event:
-  else if( length > 2222*L_GRANULARITY ) {
+  if( length > 2222*L_GRANULARITY ) {
     LOG(logERROR) << "Detected huge event (" << length << " words). Skipped.";
     statistics.evt_invalid++;
     return DEC_ERROR_HUGE_EVENT;
