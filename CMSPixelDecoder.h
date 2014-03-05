@@ -169,6 +169,7 @@ namespace CMSPixel {
     CMSPixelEventDecoder(unsigned int rocs, int flags, uint8_t ROCTYPE);
     virtual ~CMSPixelEventDecoder();
     int get_event(std::vector< uint16_t > & data, std::vector<pixel> * evt);
+    int get_event(std::vector< uint16_t > & data, std::vector<uint16_t> * readback, std::vector<pixel> * evt);
     CMSPixelStatistics statistics;
 
   protected:
@@ -179,6 +180,8 @@ namespace CMSPixel {
     const int flag;
     const unsigned int noOfROC;
     const uint8_t theROC;
+
+    std::vector<uint16_t> readback_value;
 
   private:
     // Purely virtual, to be implemented in the child classes (digital/analog):
@@ -281,7 +284,6 @@ namespace CMSPixel {
     void readback_evaluation(int header, unsigned int roc);
     std::map<unsigned int, size_t> readback_pos;
     std::map<unsigned int, uint16_t> readback_buffer;
-    std::map<unsigned int, uint16_t> readback_value;
   };
 
 
@@ -297,6 +299,7 @@ namespace CMSPixel {
     virtual ~CMSPixelFileDecoder();
 
     int get_event(std::vector<pixel> * decevt, timing & evt_timing);
+    int get_event(std::vector<pixel> * decevt, std::vector<uint16_t> * readback, timing & evt_timing);
     virtual std::vector<uint16_t> get_rawdata();
     virtual bool process_rawdata(std::vector< uint16_t > * /*rawdata*/) { return true; };
 

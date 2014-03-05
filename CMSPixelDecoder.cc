@@ -303,6 +303,11 @@ bool CMSPixelStreamDecoderRAL::check_data() {
 }
 
 int CMSPixelFileDecoder::get_event(std::vector<pixel> * decevt, timing & evt_timing) {
+  std::vector<uint16_t> * unused = new std::vector<uint16_t>();
+  return get_event(decevt,unused,evt_timing);
+}
+
+int CMSPixelFileDecoder::get_event(std::vector<pixel> * decevt, std::vector<uint16_t> * readback, timing & evt_timing) {
   // Check if stream is open:
   if(!check_data()) { return DEC_ERROR_INVALID_FILE; }
 
@@ -325,7 +330,7 @@ int CMSPixelFileDecoder::get_event(std::vector<pixel> * decevt, timing & evt_tim
   evt_timing = cms_t;
 
   // And finally call the decoder to do the rest of the work:
-  int status = evt->get_event(data, decevt);
+  int status = evt->get_event(data, readback, decevt);
   statistics.update(evt->statistics);
 
   return status;
@@ -637,7 +642,7 @@ std::string CMSPixelFileDecoder::print_addresslevels(levelset addLevels) {
 
 
 CMSPixelEventDecoder::CMSPixelEventDecoder(unsigned int rocs, int flags, uint8_t ROCTYPE)
-  : statistics(rocs), L_HEADER(0), L_TRAILER(0), L_EMPTYEVT(0), L_GRANULARITY(0), L_HIT(0), L_ROC_HEADER(0), L_HUGE_EVENT(0), flag(flags), noOfROC(rocs), theROC(ROCTYPE)
+  : statistics(rocs), L_HEADER(0), L_TRAILER(0), L_EMPTYEVT(0), L_GRANULARITY(0), L_HIT(0), L_ROC_HEADER(0), L_HUGE_EVENT(0), flag(flags), noOfROC(rocs), theROC(ROCTYPE), readback_value()
 {
 }
 
@@ -646,6 +651,11 @@ CMSPixelEventDecoder::~CMSPixelEventDecoder() {
 }
 
 int CMSPixelEventDecoder::get_event(std::vector< uint16_t > & data, std::vector<pixel> * evt) {
+  std::vector<uint16_t> * unused = new std::vector<uint16_t>();
+  return get_event(data,unused,evt);
+}
+
+int CMSPixelEventDecoder::get_event(std::vector< uint16_t > & data, std::vector<uint16_t> * readback, std::vector<pixel> * evt) {
 
   LOG(logDEBUG) << "Start decoding.";
   LOG(logDEBUG1) << "Received " << 16*data.size() << " bits of event data.";
@@ -712,6 +722,9 @@ int CMSPixelEventDecoder::get_event(std::vector< uint16_t > & data, std::vector<
 
   // Check sanity of output
   int status2 = post_check_sanity(evt,roc);
+
+  // Prepare the readback data to be returned:
+  *readback = readback_value;
 
   // Return worst problem (minimum of error code):
   LOG(logDEBUG) << "STATUS end of event processing, status = " << std::min(status,status2);
@@ -872,7 +885,7 @@ bool CMSPixelEventDecoder::convertDcolToCol(int dcol, int pix, int & col, int & 
 /*          decoding DIGITAL chip data                                    */
 /*========================================================================*/
 
-CMSPixelEventDecoderDigital::CMSPixelEventDecoderDigital(unsigned int rocs, int flags, uint8_t ROCTYPE) : CMSPixelEventDecoder(rocs, flags, ROCTYPE), readback_pos(), readback_buffer(), readback_value()
+CMSPixelEventDecoderDigital::CMSPixelEventDecoderDigital(unsigned int rocs, int flags, uint8_t ROCTYPE) : CMSPixelEventDecoder(rocs, flags, ROCTYPE), readback_pos(), readback_buffer()
 {
   LOG(logDEBUG) << "Preparing a digital event decoder instance, ROC type " << static_cast<int>(ROCTYPE) << "...";
   // Loading constants and flags:
@@ -884,7 +897,7 @@ CMSPixelEventDecoderDigital::CMSPixelEventDecoderDigital(unsigned int rocs, int 
     readback_pos.insert(std::make_pair(i,17));
     // Initialize readback value with 0:
     readback_buffer.insert(std::make_pair(i,0));
-    readback_value.insert(std::make_pair(i,0));
+    readback_value.push_back(0);
   }
 }
 
@@ -963,7 +976,7 @@ void CMSPixelEventDecoderDigital::readback_evaluation(int header, unsigned int r
   if(readback_pos[roc] == 16) { 
     updated = true;
     // Update the return value:
-    readback_value[roc] = readback_buffer[roc];
+    readback_value.at(roc) = readback_buffer[roc];
     // Clear the readback value before proceeding:
     readback_buffer[roc] = 0;
   }
