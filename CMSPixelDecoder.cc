@@ -879,7 +879,7 @@ bool CMSPixelEventDecoder::convertDcolToCol(int dcol, int pix, int & col, int & 
 
 CMSPixelEventDecoderDigital::CMSPixelEventDecoderDigital(unsigned int rocs, int flags, uint8_t ROCTYPE) : CMSPixelEventDecoder(rocs, flags, ROCTYPE), readback_pos(), readback_buffer()
 {
-  LOG(logDEBUG) << "Preparing a digital event decoder instance, ROC type " << static_cast<int>(ROCTYPE) << "...";
+  LOG(logDEBUG) << "Preparing a digital event decoder instance, expecting " << rocs << " ROC(s), type " << static_cast<int>(ROCTYPE) << "...";
   // Loading constants and flags:
   LOG(logDEBUG2) << "Loading constants...";
   load_constants(flags);
