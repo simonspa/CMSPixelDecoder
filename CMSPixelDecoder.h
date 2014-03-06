@@ -51,6 +51,9 @@
 #define ROCNUMCOLS 52
 #define ROCNUMROWS 80
 
+// Global constants:
+#define MAX_DROPPED_HEADS 30000
+
 namespace CMSPixel {
 
   // ROC types we have to care about:
@@ -104,6 +107,7 @@ namespace CMSPixel {
     data_blocks(0),
       head_data(0),
       head_trigger(0),
+      head_dropped(0),
       evt_valid(0),
       evt_empty(0),
       evt_invalid(0),
@@ -124,6 +128,8 @@ namespace CMSPixel {
     uint32_t head_data;
     // Number of detected testboard trigger markers
     uint32_t head_trigger;
+    // Number of testboard headers dropped
+    uint32_t head_dropped;
     // Number of valid events (everything allright)
     uint32_t evt_valid;
     // Number of empty events (fine, but contained no pixel)

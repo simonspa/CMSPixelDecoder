@@ -26,7 +26,7 @@
 using namespace CMSPixel;
 
 void CMSPixelStatistics::init(unsigned int nrocs) {
-  head_data = head_trigger = 0;
+  head_data = head_trigger = head_dropped = 0;
   evt_valid = evt_empty = evt_invalid = ipbus_invalid = 0;
   pixels_valid = pixels_valid_zeroph = pixels_invalid = pixels_invalid_eor = 0;
   rocmap_invalid.clear();
@@ -40,6 +40,7 @@ void CMSPixelStatistics::init(unsigned int nrocs) {
 void CMSPixelStatistics::update(CMSPixelStatistics stats) {
   data_blocks += stats.data_blocks;
   head_data += stats.head_data;
+  head_dropped += stats.head_dropped;
   head_trigger += stats.head_trigger;
   evt_valid += stats.evt_valid;
   evt_empty += stats.evt_empty;
@@ -62,6 +63,7 @@ std::string CMSPixelStatistics::get() {
   os << "    Data blocks read:     " << std::setw(8) << data_blocks << std::endl;
   os << "    TB Trigger Marker:    " << std::setw(8) << head_trigger << std::endl;
   os << "    TB Data Marker:       " << std::setw(8) << head_data << std::endl;
+  os << "    TB Dropped Headers:   " << std::setw(8) << head_dropped << std::endl;
   os << "   -------------------------------" << std::endl;
   os << "    Events empty:         " << std::setw(8) << evt_empty << std::endl;
   os << "    Events valid:         " << std::setw(8) << evt_valid << std::endl;
@@ -379,6 +381,10 @@ bool CMSPixelStreamDecoderRAL::chop_datastream(std::vector< uint16_t > * rawdata
 
   while (!word_is_header(*datait)) {
     LOG(logDEBUG1) << "STATUS drop: " << std::hex << (*datait) << std::dec;
+    statistics.head_dropped++;
+
+    // If many headers are dropped the decoder configuration is probably wrong:
+    if(statistics.head_dropped > MAX_DROPPED_HEADS) { return false; }
     if(datait++ == datablob->end()) return false;
   }
 
@@ -411,6 +417,10 @@ bool CMSPixelFileDecoderRAL::chop_datastream(std::vector< uint16_t > * rawdata) 
 
   while (!word_is_header(word)) {
     LOG(logDEBUG1) << "STATUS drop: " << std::hex << word << std::dec;
+    statistics.head_dropped++;
+
+    // If many headers are dropped the decoder configuration is probably wrong:
+    if(statistics.head_dropped > MAX_DROPPED_HEADS) { return false; }
     if(!readWord(word)) return false;
   }
 
@@ -475,7 +485,11 @@ bool CMSPixelFileDecoderPSI_ATB::chop_datastream(std::vector< uint16_t > * rawda
     }
     else {
       LOG(logDEBUG1) << "STATUS drop: " << std::hex << word << std::dec;
+      statistics.head_dropped++;
     }
+
+    // If many headers are dropped the decoder configuration is probably wrong:
+    if(statistics.head_dropped > MAX_DROPPED_HEADS) { return false; }
     if(!readWord(word)) return false;
   }
     
@@ -513,6 +527,10 @@ bool CMSPixelFileDecoderPSI_DTB::chop_datastream(std::vector< uint16_t > * rawda
   while (!word_is_data(word)) {
     // If header is detected read more words:
     LOG(logDEBUG1) << "STATUS drop: " << std::hex << word << std::dec;
+    statistics.head_dropped++;
+
+    // If many headers are dropped the decoder configuration is probably wrong:
+    if(statistics.head_dropped > MAX_DROPPED_HEADS) { return false; }
     if(!readWord(word)) return false;
   }
     
@@ -888,7 +906,7 @@ CMSPixelEventDecoderDigital::CMSPixelEventDecoderDigital(unsigned int rocs, int 
 std::string CMSPixelEventDecoderDigital::print_data(std::vector< uint16_t> * data) {
   // This simply prints the raw data, useful only for debugging.
   std::stringstream os;
-  for(unsigned int i = 0; i < data->size();i++) 
+  for(unsigned int i = 0; i < data->size();i++)
     os << std::hex << get_bits(*data,i*L_GRANULARITY,L_GRANULARITY);
   os << std::dec;
   return os.str();
