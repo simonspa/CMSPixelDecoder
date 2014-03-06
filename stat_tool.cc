@@ -17,8 +17,9 @@ int main(int argc, char* argv[]) {
   timing time;
   unsigned int num_rocs = 8;
   std::vector<std::string> files;
-  bool write_badevents = false;
+  bool write_badevents = false, consider_dataphase = false;
   std::string file_badevents;
+  uint8_t dataphase = 0;
   FILE * badevents;
 
   for (int i = 1; i < argc; i++) {
@@ -30,11 +31,15 @@ int main(int argc, char* argv[]) {
       write_badevents = true;
       file_badevents = string(argv[++i]);
     }
+    else if(!strcmp(argv[i],"-dp")) {
+      consider_dataphase = true;
+      dataphase = atoi(argv[++i]);
+    }
     // add to the list of files to be processed:
     else { files.push_back(string(argv[i])); }
   }
 
-  CMSPixelStatistics global_statistics(num_rocs);
+  CMSPixelStatistics myStatistics(num_rocs);
   if(write_badevents) { badevents = fopen(file_badevents.c_str(),"w"); }
 
   for (std::vector<std::string>::iterator it = files.begin(); it != files.end(); ++it) {
@@ -52,14 +57,19 @@ int main(int argc, char* argv[]) {
 	std::vector<uint16_t> raw = decoder->get_rawdata();
 	fwrite (&raw[0], sizeof(uint16_t), raw.size(), badevents);
       }
+
+      // Update our statistics depending on dataphase settings:
+      if(!consider_dataphase || time.data_phase == dataphase) {
+	myStatistics.update(decoder->evt->statistics);
+      }
     }
 
     if(write_badevents) { fclose(badevents); }
-    global_statistics.update(decoder->statistics);
-    //    decoder->statistics.print();
     delete decoder;
   }
 
-  global_statistics.print();
+  // Print filtered statistics:
+  std::cout << "Filtered statistics:" << std::endl;
+  myStatistics.print();
   return 0;
 }
