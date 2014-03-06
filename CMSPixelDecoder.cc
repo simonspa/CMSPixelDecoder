@@ -883,14 +883,6 @@ CMSPixelEventDecoderDigital::CMSPixelEventDecoderDigital(unsigned int rocs, int 
   // Loading constants and flags:
   LOG(logDEBUG2) << "Loading constants...";
   load_constants(flags);
-
-  for(unsigned int i = 0; i < rocs; i++) { 
-    // Initialize with position outside data word, wait till first status bit arrives:
-    readback_pos.insert(std::make_pair(i,17));
-    // Initialize readback value with 0:
-    readback_buffer.insert(std::make_pair(i,0));
-    readback_value.push_back(std::make_pair(0,0));
-  }
 }
 
 std::string CMSPixelEventDecoderDigital::print_data(std::vector< uint16_t> * data) {
@@ -955,6 +947,15 @@ void CMSPixelEventDecoderDigital::readback_evaluation(int header, unsigned int r
 
   // This only works with digital chips >= V2, otherwise just ignore this:
   if(theROC < ROC_PSI46DIGV2) return;
+
+  if(!(roc < readback_buffer.size())) {
+    LOG(logDEBUG4) << "Detected new ROC " << roc << ", allocating buffers for readback data.";
+    // Initialize with position outside data word, wait till first status bit arrives:
+    readback_pos.insert(std::make_pair(roc,17));
+    // Initialize readback value with 0:
+    readback_buffer.insert(std::make_pair(roc,0));
+    readback_value.push_back(std::make_pair(0,0));
+  }
   
   // Let's read out the information from the ROC header (readback mechanism):
   if(readback_pos[roc] < 16) {
