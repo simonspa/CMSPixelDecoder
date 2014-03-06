@@ -169,6 +169,7 @@ namespace CMSPixel {
     CMSPixelEventDecoder(unsigned int rocs, int flags, uint8_t ROCTYPE);
     virtual ~CMSPixelEventDecoder();
     int get_event(std::vector< uint16_t > & data, std::vector<pixel> * evt);
+    int get_event(std::vector< uint16_t > & data, std::vector<std::pair<uint8_t,uint8_t> > * readback, std::vector<pixel> * evt);
     CMSPixelStatistics statistics;
 
   protected:
@@ -179,6 +180,9 @@ namespace CMSPixel {
     const int flag;
     const unsigned int noOfROC;
     const uint8_t theROC;
+
+    // Pairs of DAC - Value, one for each ROC:
+    std::vector<std::pair<uint8_t,uint8_t> > readback_value;
 
   private:
     // Purely virtual, to be implemented in the child classes (digital/analog):
@@ -244,7 +248,7 @@ namespace CMSPixel {
  
   class CMSPixelEventDecoderDigital : public CMSPixelEventDecoder {
   public:
-    CMSPixelEventDecoderDigital(unsigned int rocs, int flags, uint8_t ROCTYPE);
+  CMSPixelEventDecoderDigital(unsigned int rocs, int flags, uint8_t ROCTYPE);
 
   protected:
     inline void load_constants(int flags) {
@@ -276,6 +280,11 @@ namespace CMSPixel {
     int get_bits(std::vector< uint16_t > data, int bit_offset,int number_of_bits);
     std::string print_data(std::vector< uint16_t> * data);
     std::string print_hit(int hit);
+
+    // Readback values and data stream positions for every ROC independently:
+    void readback_evaluation(int header, unsigned int roc);
+    std::map<unsigned int, size_t> readback_pos;
+    std::map<unsigned int, uint16_t> readback_buffer;
   };
 
 
@@ -291,13 +300,9 @@ namespace CMSPixel {
     virtual ~CMSPixelFileDecoder();
 
     int get_event(std::vector<pixel> * decevt, timing & evt_timing);
+    int get_event(std::vector<pixel> * decevt, std::vector<std::pair<uint8_t,uint8_t> > * readback, timing & evt_timing);
     virtual std::vector<uint16_t> get_rawdata();
-
-    virtual bool word_is_data(unsigned short word) = 0;
-    virtual bool word_is_trigger(unsigned short word) = 0;
-    virtual bool word_is_header(unsigned short word) = 0;
-    virtual bool word_is_2nd_header(unsigned short word) = 0;
-    virtual bool process_rawdata(std::vector< uint16_t > * rawdata) = 0;
+    virtual bool process_rawdata(std::vector< uint16_t > * /*rawdata*/) { return true; };
 
     CMSPixelStatistics statistics;
     CMSPixelEventDecoder * evt;
@@ -305,12 +310,13 @@ namespace CMSPixel {
   protected:
     uint8_t theROC;
     virtual bool readWord(uint16_t &word);
+    virtual bool check_data();
+
     FILE * mtbStream;
-    //int64_t cmstime;
     timing cms_t;
     std::vector<uint16_t> lastevent_raw;
 
-    virtual bool chop_datastream(std::vector< uint16_t > * rawdata);
+    virtual bool chop_datastream(std::vector< uint16_t > * rawdata) = 0;
 
   private:
     bool read_address_levels(const char* levelsFile, unsigned int rocs, levelset & addressLevels);
@@ -324,23 +330,14 @@ namespace CMSPixel {
     ~CMSPixelFileDecoderRAL() {};
     std::vector<uint16_t> get_rawdata();
   private:
+    bool chop_datastream(std::vector< uint16_t > * rawdata);
     int ral_flags;
     inline int addflags(int flags) {
       return (flags | FLAG_16BITS_PER_WORD);
     };
     bool readWord(uint16_t &word);
-    inline bool word_is_data(unsigned short word) {
-      // IPBus format starts with 0xFFFFFFFF, no other headers allowed.
-      if(word == 0xFFFF) return true;
-      else return false;
-    };
-    inline bool word_is_trigger(unsigned short word) {
-      // IPBus format doesn't know about trigger headers.
-      (void)word;
-      return false;
-    };
     inline bool word_is_header(unsigned short word) {
-      // IPBus format doesn't know about headers other than data headers.
+      // IPBus format starts with 0xFFFFFFFF, no other headers allowed.
       if(word == 0xFFFF) return true;
       else return false;
     };
@@ -351,11 +348,28 @@ namespace CMSPixel {
     bool process_rawdata(std::vector< uint16_t > * rawdata);
   };
 
+  class CMSPixelStreamDecoderRAL : public CMSPixelFileDecoderRAL {
+  public:
+  CMSPixelStreamDecoderRAL(std::vector<uint32_t> * datastream, unsigned int rocs, int flags, uint8_t ROCTYPE);
+    ~CMSPixelStreamDecoderRAL() {};
+  private:
+    bool chop_datastream(std::vector< uint16_t > * rawdata);
+    bool check_data();
+    std::vector<uint32_t> *datablob;
+    std::vector<uint32_t>::iterator datait;
+    inline bool word_is_header(uint32_t word) {
+      // IPBus format starts with 0xFFFFFFFF, no other headers allowed.
+      if(word == 0xffffffff) return true;
+      else return false;
+    };
+  };
+
 class CMSPixelFileDecoderPSI_ATB : public CMSPixelFileDecoder {
   public:
   CMSPixelFileDecoderPSI_ATB(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile) : CMSPixelFileDecoder(FileName, rocs, flags, ROCTYPE, addressFile) {};
     ~CMSPixelFileDecoderPSI_ATB() {};
   private:
+    bool chop_datastream(std::vector< uint16_t > * rawdata);
     inline bool word_is_data(unsigned short word) {
       if(word == 0x8001 || word == 0x8081 || word == 0x8005) return true;
       else return false;
@@ -368,12 +382,6 @@ class CMSPixelFileDecoderPSI_ATB : public CMSPixelFileDecoder {
       if(word == 0x8001 || word == 0x8081 || word == 0x8005 || word == 0x8004 || word == 0x8002 || word == 0x8008 || word == 0x8010) return true;
       else return false;
     };
-    inline bool word_is_2nd_header(unsigned short word) {
-      // PSI ATB features 16bit headers only.
-      (void)word;
-      return true;
-    };
-    bool process_rawdata(std::vector< uint16_t > * rawdata);
   };
 
 class CMSPixelFileDecoderPSI_DTB : public CMSPixelFileDecoder {
@@ -387,10 +395,6 @@ class CMSPixelFileDecoderPSI_DTB : public CMSPixelFileDecoder {
       if((word&0xF000) > 0x0000) return true;
       else return false;
     };
-    inline bool word_is_trigger(unsigned short /*word*/) { return false; };
-    inline bool word_is_header(unsigned short /*word*/) { return true; };
-    inline bool word_is_2nd_header(unsigned short /*word*/) { return true; }
-    bool process_rawdata(std::vector< uint16_t > * rawdata);
   };
 
 
