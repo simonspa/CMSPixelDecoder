@@ -199,11 +199,11 @@ bool test_analog_single()
   // REFERENCE:
   CMSPixelStatistics ref;
   ref.head_data = ref.head_trigger = 109495;
-  ref.evt_empty = 75595; //77665;
-  ref.evt_valid = 33899; //31829;
-  ref.pixels_valid = 39973; //37105;
+  ref.evt_empty = 75595;
+  ref.evt_valid = 33899;
+  ref.pixels_valid = 36524;
   ref.evt_invalid = 0;
-  ref.pixels_invalid = 8718; //11586;
+  ref.pixels_invalid = 12167;
   double ref_timing = 0.26;
 
   std::vector<pixel> * evt = new std::vector<pixel>;
@@ -285,11 +285,11 @@ bool test_digital_single()
   // REFERENCE:
   CMSPixelStatistics ref;
   ref.head_data = ref.head_trigger = 165195;
-  ref.evt_empty = 87801;
-  ref.evt_valid = 75522;
-  ref.pixels_valid = 168980;
+  ref.evt_empty = 87774;
+  ref.evt_valid = 75549;
+  ref.pixels_valid = 162376;
   ref.evt_invalid = 1871;
-  ref.pixels_invalid = 2368;
+  ref.pixels_invalid = 8972;
   double ref_timing = 1.69;
 
   std::vector<pixel> * evt = new std::vector<pixel>;
@@ -416,11 +416,11 @@ bool test_telescope_psi()
   CMSPixelStatistics ref;
   ref.head_trigger = 24954;
   ref.head_data = 24816;
-  ref.evt_empty = 1854;
-  ref.evt_valid = 19579;
-  ref.pixels_valid = 1336046;
-  ref.evt_invalid = 3382;
-  ref.pixels_invalid = 69444;
+  ref.evt_empty = 1779;
+  ref.evt_valid = 19755;
+  ref.pixels_valid = 1339167;
+  ref.evt_invalid = 3281;
+  ref.pixels_invalid = 119818;
   double ref_timing = 7.3;
 
   std::vector<pixel> * evt = new std::vector<pixel>;
@@ -460,12 +460,13 @@ bool test_telescope_ral()
   // REFERENCE:
   CMSPixelStatistics ref;
   ref.head_trigger = 0;
-  ref.head_data = 354253;
-  ref.evt_empty = 51256;
-  ref.evt_valid = 202117;
-  ref.pixels_valid = 8328585;
-  ref.evt_invalid = 100879;
-  ref.pixels_invalid = 1397125;
+  ref.head_data = 807877;
+  ref.evt_empty = 47802;
+  ref.evt_valid = 375057;
+  ref.pixels_valid = 24604381;
+  ref.evt_invalid = 384992;
+  ref.ipbus_invalid = 25;
+  ref.pixels_invalid = 9918731;
   double ref_timing = 31.7;
 
   std::vector<pixel> * evt = new std::vector<pixel>;
@@ -507,12 +508,12 @@ bool test_telescope_ral2()
   CMSPixelStatistics ref;
   ref.head_trigger = 0;
   ref.head_data = 507934;
-  ref.evt_empty = 309292;
+  ref.evt_empty = 309291;
   ref.evt_valid = 198621;
   ref.pixels_valid = 1413302;
-  ref.evt_invalid = 0;
+  ref.evt_invalid = 1;
   ref.ipbus_invalid = 20;
-  ref.pixels_invalid = 4;
+  ref.pixels_invalid = 5;
 
   double ref_timing = 24.3;
 
