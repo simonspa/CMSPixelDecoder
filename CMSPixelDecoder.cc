@@ -303,11 +303,11 @@ bool CMSPixelStreamDecoderRAL::check_data() {
 }
 
 int CMSPixelFileDecoder::get_event(std::vector<pixel> * decevt, timing & evt_timing) {
-  std::vector<uint16_t> * unused = new std::vector<uint16_t>();
+  std::vector<std::pair<uint8_t,uint8_t> > * unused = new std::vector<std::pair<uint8_t,uint8_t> >();
   return get_event(decevt,unused,evt_timing);
 }
 
-int CMSPixelFileDecoder::get_event(std::vector<pixel> * decevt, std::vector<uint16_t> * readback, timing & evt_timing) {
+int CMSPixelFileDecoder::get_event(std::vector<pixel> * decevt, std::vector<std::pair<uint8_t,uint8_t> > * readback, timing & evt_timing) {
   // Check if stream is open:
   if(!check_data()) { return DEC_ERROR_INVALID_FILE; }
 
@@ -651,11 +651,11 @@ CMSPixelEventDecoder::~CMSPixelEventDecoder() {
 }
 
 int CMSPixelEventDecoder::get_event(std::vector< uint16_t > & data, std::vector<pixel> * evt) {
-  std::vector<uint16_t> * unused = new std::vector<uint16_t>();
+  std::vector<std::pair<uint8_t,uint8_t> > * unused = new std::vector<std::pair<uint8_t,uint8_t> >();
   return get_event(data,unused,evt);
 }
 
-int CMSPixelEventDecoder::get_event(std::vector< uint16_t > & data, std::vector<uint16_t> * readback, std::vector<pixel> * evt) {
+int CMSPixelEventDecoder::get_event(std::vector< uint16_t > & data, std::vector<std::pair<uint8_t,uint8_t> > * readback, std::vector<pixel> * evt) {
 
   LOG(logDEBUG) << "Start decoding.";
   LOG(logDEBUG1) << "Received " << 16*data.size() << " bits of event data.";
@@ -897,7 +897,7 @@ CMSPixelEventDecoderDigital::CMSPixelEventDecoderDigital(unsigned int rocs, int 
     readback_pos.insert(std::make_pair(i,17));
     // Initialize readback value with 0:
     readback_buffer.insert(std::make_pair(i,0));
-    readback_value.push_back(0);
+    readback_value.push_back(std::make_pair(0,0));
   }
 }
 
@@ -976,7 +976,8 @@ void CMSPixelEventDecoderDigital::readback_evaluation(int header, unsigned int r
   if(readback_pos[roc] == 16) { 
     updated = true;
     // Update the return value:
-    readback_value.at(roc) = readback_buffer[roc];
+    readback_value.at(roc).first = (readback_buffer[roc]>>8)&0x0f;
+    readback_value.at(roc).second = readback_buffer[roc]&0x00ff;
     // Clear the readback value before proceeding:
     readback_buffer[roc] = 0;
   }
@@ -986,12 +987,20 @@ void CMSPixelEventDecoderDigital::readback_evaluation(int header, unsigned int r
     readback_pos[roc] = 0;
   }
 
-  LOG(logDEBUG4) << "Readback ROC " << roc << ": Pos " << readback_pos[roc] 
-		 << " Head: " << std::hex << header << std::dec << " "
-		 << ( (header&0x002) != 0 ? "(S)" : "( )") 
-		 << " (D" << (header&0x001) << ")"
-		 << " Value " << readback_value[roc]
-		 << (updated ? "*" : "");
+  std::stringstream os;
+  os << "Readback ROC " << roc << ": Pos " << readback_pos[roc] 
+     << " Head: " << std::hex << header << std::dec << " "
+     << ( (header&0x002) != 0 ? "(S)" : "( )") 
+     << " (D" << (header&0x001) << ")"
+     << " Buff ";
+  for(int i = 15; i >= 0; i--) {
+    os << ((readback_buffer[roc]>>i)&1);
+  }
+  os << " DAC " << static_cast<int>(readback_value.at(roc).first)
+     << " Value " << static_cast<int>(readback_value.at(roc).second)
+     << (updated ? "*" : "");
+  
+  LOG(logDEBUG4) << os.str();
 }
 
 bool CMSPixelEventDecoderDigital::find_tbm_trailer(std::vector< uint16_t > data, unsigned int pos)
