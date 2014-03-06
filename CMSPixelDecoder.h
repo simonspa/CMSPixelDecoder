@@ -149,7 +149,6 @@ namespace CMSPixel {
     std::map<unsigned int, unsigned int> rocmap_valid;
 
     //    int data_notrailer;
-    //    int data_huge;
     //    int data_norocs;
     //    int data_fewrocs;
     //    std::map<unsigned int,int> data_diffrocs;
@@ -176,7 +175,7 @@ namespace CMSPixel {
     bool convertDcolToCol(int dcol, int pix, int & col, int & row);
     bool checkPixelOrder(int col, int row);
 
-    unsigned int L_HEADER, L_TRAILER, L_EMPTYEVT, L_GRANULARITY, L_HIT, L_ROC_HEADER, L_HUGE_EVENT;
+    unsigned int L_HEADER, L_TRAILER, L_EMPTYEVT, L_GRANULARITY, L_HIT, L_ROC_HEADER;
     const int flag;
     const unsigned int noOfROC;
     const uint8_t theROC;

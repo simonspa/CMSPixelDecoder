@@ -642,7 +642,7 @@ std::string CMSPixelFileDecoder::print_addresslevels(levelset addLevels) {
 
 
 CMSPixelEventDecoder::CMSPixelEventDecoder(unsigned int rocs, int flags, uint8_t ROCTYPE)
-  : statistics(rocs), L_HEADER(0), L_TRAILER(0), L_EMPTYEVT(0), L_GRANULARITY(0), L_HIT(0), L_ROC_HEADER(0), L_HUGE_EVENT(0), flag(flags), noOfROC(rocs), theROC(ROCTYPE), readback_value()
+  : statistics(rocs), L_HEADER(0), L_TRAILER(0), L_EMPTYEVT(0), L_GRANULARITY(0), L_HIT(0), L_ROC_HEADER(0), flag(flags), noOfROC(rocs), theROC(ROCTYPE), readback_value()
 {
 }
 
@@ -765,14 +765,6 @@ int CMSPixelEventDecoder::pre_check_sanity(std::vector< uint16_t > * data, unsig
     }
   }
   else LOG(logDEBUG2) << "Not checking for TBM presence.";
-
-  // There might even be a huge event:
-  if( length > 2222*L_GRANULARITY ) {
-    LOG(logERROR) << "Detected huge event (" << length << " words). Skipped.";
-    statistics.evt_invalid++;
-    return DEC_ERROR_HUGE_EVENT;
-  }
-
 
   // Maybe we deleted something, recompute length:
   length = L_GRANULARITY*data->size();
