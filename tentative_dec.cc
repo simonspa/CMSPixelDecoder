@@ -16,6 +16,7 @@ int main(int argc, char* argv[]) {
   unsigned int nrocs = 1;
   CMSPixelStatistics global_statistics(nrocs);
   std::vector<pixel> * evt = new std::vector<pixel>;
+  std::vector<std::pair<uint8_t,uint8_t> > * rbdat = new std::vector<std::pair<uint8_t,uint8_t> >();
   timing time;
   int64_t old_timestamp = 0;
   int flags = 0; //FLAG_OVERWRITE_ROC_HEADER_POS; //FLAG_OLD_RAL_FORMAT;
@@ -32,7 +33,7 @@ int main(int argc, char* argv[]) {
     pFile = fopen("faileddecoding.dat","w");
 
     for(int j = 0; j < events; ++j) {
-      int status = decoder->get_event(evt, time);
+      int status = decoder->get_event(evt, rbdat, time);
       //std::cout <<"Return: " << status << std::endl;
       if(status  <= DEC_ERROR_NO_MORE_DATA) break;
 
@@ -48,6 +49,12 @@ int main(int argc, char* argv[]) {
 	// Write to file:
 	fwrite (&raw[0], sizeof(uint16_t), raw.size(), pFile);
       }
+
+      std::cout << "Readback:" << std::endl;
+      for(std::vector<std::pair<uint8_t,uint8_t> >::iterator it = rbdat->begin(); it != rbdat->end(); ++it) {
+	std::cout << static_cast<int>(it->second) << " ";
+      }
+      std::cout << std::endl;
 
       if(time.timestamp < old_timestamp) {
 	LOG(logWARNING) << "Timestamps not monotonically increasing!";
