@@ -56,9 +56,6 @@ IF(BUILD_TOOLS)
   ADD_EXECUTABLE (unit_tests unit_tests.cc)
   TARGET_LINK_LIBRARIES (unit_tests  ${DEC_LIB})
 
-  ADD_EXECUTABLE (stream_decode stream_decode.cc)
-  TARGET_LINK_LIBRARIES (stream_decode  ${DEC_LIB})
-
   ADD_EXECUTABLE (stat_tool stat_tool.cc)
   TARGET_LINK_LIBRARIES (stat_tool ${DEC_LIB})
 
