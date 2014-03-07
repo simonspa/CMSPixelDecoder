@@ -80,7 +80,7 @@ namespace CMSPixel {
     int64_t timestamp;
     uint32_t trigger_number;
     uint32_t token_number;
-    char triggers_stagged;
+    char triggers_stacked;
     char trigger_phase;
     char data_phase;
   } timing;

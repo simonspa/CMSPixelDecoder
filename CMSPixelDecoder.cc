@@ -201,7 +201,7 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
 
       cms_t.trigger_phase = (last>>13)&0xf;
       cms_t.data_phase = (nexttolast>>6)&0xf;
-      cms_t.triggers_stagged = (nexttolast)&0xff;
+      cms_t.triggers_stacked = (nexttolast)&0xff;
     }
     else { // odd event length
       cms_t.trigger_number = (((trignumber2<<32)&0xff000000) |
@@ -222,18 +222,18 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
 
       cms_t.trigger_phase = (last>>5)&0xf;
       cms_t.data_phase = (last>>14)&0xf;
-      cms_t.triggers_stagged = (last>>8)&0xff;
+      cms_t.triggers_stacked = (last>>8)&0xff;
     }
 
     // Cut off data not belonging to the fields:
     cms_t.trigger_phase &= 0x07;
     cms_t.data_phase &= 0x03;
-    cms_t.triggers_stagged &= 0x3f;
+    cms_t.triggers_stacked &= 0x3f;
 
     // Some debug printout:
     LOG(logDEBUG4) << "IPBus timestamp: " << std::hex << cms_t.timestamp << std::dec << " = " << cms_t.timestamp << "us.";
     LOG(logDEBUG4) << "IPBus number triggers: " << cms_t.trigger_number << ", tokens: " << cms_t.token_number;
-    LOG(logDEBUG4) << "IPBus triggers stagged: " << static_cast<int>(cms_t.triggers_stagged);
+    LOG(logDEBUG4) << "IPBus triggers stacked: " << static_cast<int>(cms_t.triggers_stacked);
     LOG(logDEBUG4) << "IPBus phases trigger: " << static_cast<int>(cms_t.trigger_phase) << ", data: " << static_cast<int>(cms_t.data_phase);
 
     // cut first 8 bytes from header:
