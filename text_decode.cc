@@ -64,6 +64,7 @@ int main(int argc, char* argv[]) {
   singledec = new CMSPixelEventDecoderDigital(num_rocs,FLAG_16BITS_PER_WORD,ROC_PSI46DIGV21);
 
   std::cout << "Return: " << singledec->get_event(singledat,evt) << std::endl;
+  singledec->statistics.print();
   delete singledec;
   singledat.clear();
 
