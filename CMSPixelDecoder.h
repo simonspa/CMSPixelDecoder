@@ -104,7 +104,10 @@ namespace CMSPixel {
   class CMSPixelStatistics {
   public:
     CMSPixelStatistics(unsigned int nrocs = 1) :
-    data_blocks(0),
+    roc_count(nrocs),
+      roctype(0),
+      dectype(""),
+      data_blocks(0),
       head_data(0),
       head_trigger(0),
       head_dropped(0),
@@ -122,6 +125,12 @@ namespace CMSPixel {
     void update(CMSPixelStatistics stats);
     void print();
     std::string get();
+    // Number of ROCs we collect statistics for
+    size_t roc_count;
+    // Type of ROCs we collect statistics for:
+    uint32_t roctype;
+    // Decoder type which is collecting these statistics:
+    std::string dectype;
     // Raw data blocks:
     uint32_t data_blocks;
     // Number of detected testboard data markers
@@ -331,7 +340,7 @@ namespace CMSPixel {
 
   class CMSPixelFileDecoderRAL : public CMSPixelFileDecoder {
   public:
-  CMSPixelFileDecoderRAL(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE) : CMSPixelFileDecoder(FileName, rocs, addflags(flags), ROCTYPE, ""), ral_flags(flags) {};
+  CMSPixelFileDecoderRAL(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE) : CMSPixelFileDecoder(FileName, rocs, addflags(flags), ROCTYPE, ""), ral_flags(flags) { statistics.dectype = "CMSPixelFileDecoderRAL"; };
     ~CMSPixelFileDecoderRAL() {};
     std::vector<uint16_t> get_rawdata();
   private:
@@ -371,7 +380,7 @@ namespace CMSPixel {
 
 class CMSPixelFileDecoderPSI_ATB : public CMSPixelFileDecoder {
   public:
-  CMSPixelFileDecoderPSI_ATB(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile) : CMSPixelFileDecoder(FileName, rocs, flags, ROCTYPE, addressFile) {};
+  CMSPixelFileDecoderPSI_ATB(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile) : CMSPixelFileDecoder(FileName, rocs, flags, ROCTYPE, addressFile) { statistics.dectype = "CMSPixelFileDecoderPSI_ATB"; };
     ~CMSPixelFileDecoderPSI_ATB() {};
   private:
     bool chop_datastream(std::vector< uint16_t > * rawdata);
@@ -391,7 +400,7 @@ class CMSPixelFileDecoderPSI_ATB : public CMSPixelFileDecoder {
 
 class CMSPixelFileDecoderPSI_DTB : public CMSPixelFileDecoder {
   public:
-  CMSPixelFileDecoderPSI_DTB(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile) : CMSPixelFileDecoder(FileName, rocs, flags | FLAG_12BITS_PER_WORD, ROCTYPE, addressFile) {};
+  CMSPixelFileDecoderPSI_DTB(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile) : CMSPixelFileDecoder(FileName, rocs, flags | FLAG_12BITS_PER_WORD, ROCTYPE, addressFile) { statistics.dectype = "CMSPixelFileDecoderPSI_DTB"; };
     ~CMSPixelFileDecoderPSI_DTB() {};
   private:
     bool chop_datastream(std::vector< uint16_t > * rawdata);

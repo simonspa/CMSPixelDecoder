@@ -59,6 +59,8 @@ std::string CMSPixelStatistics::get() {
   std::stringstream os;
   os << std::endl;
   os << " Data decoded using CMSPixelDecoder v" << DECODER_VERSION << std::endl;
+  if(!dectype.empty()) { os << " Statistics collected by " << dectype << std::endl; }
+  if(roctype != 0) { os << " for " << roc_count << " chips of type " << roctype << std::endl; }
   os << " ---------------------------------" << std::endl;
   os << "    Data blocks read:     " << std::setw(8) << data_blocks << std::endl;
   os << "    TB Trigger Marker:    " << std::setw(8) << head_trigger << std::endl;
@@ -255,6 +257,9 @@ CMSPixelStreamDecoderRAL::CMSPixelStreamDecoderRAL(std::vector<uint32_t> * datas
   datablob = datastream;
   // Set iterator to the beginning:
   datait = datablob->begin();
+
+  // Provide identity to the statistics collector:
+  statistics.dectype = "CMSPixelStreamDecoderRAL";
 }
 
 CMSPixelFileDecoder::CMSPixelFileDecoder(const char *FileName, unsigned int rocs, int flags, uint8_t ROCTYPE, const char *addressFile)
@@ -289,6 +294,10 @@ CMSPixelFileDecoder::CMSPixelFileDecoder(const char *FileName, unsigned int rocs
   if((mtbStream = fopen(FileName,"r")) != NULL) {
     LOG(logDEBUG1) << " ...successfully.";
   }
+
+  // Provide identity to the statistics collector:
+  statistics.dectype = "CMSPixelFileDecoder";
+  statistics.roctype = ROCTYPE;
 }
 
 CMSPixelFileDecoder::~CMSPixelFileDecoder() {
@@ -662,6 +671,9 @@ std::string CMSPixelFileDecoder::print_addresslevels(levelset addLevels) {
 CMSPixelEventDecoder::CMSPixelEventDecoder(unsigned int rocs, int flags, uint8_t ROCTYPE)
   : statistics(rocs), L_HEADER(0), L_TRAILER(0), L_EMPTYEVT(0), L_GRANULARITY(0), L_HIT(0), L_ROC_HEADER(0), flag(flags), noOfROC(rocs), theROC(ROCTYPE), readback_value()
 {
+  // Provide identity to the statistics collector:
+  statistics.dectype = "CMSPixelEventDecoder";
+  statistics.roctype = ROCTYPE;
 }
 
 CMSPixelEventDecoder::~CMSPixelEventDecoder() {
@@ -901,6 +913,9 @@ CMSPixelEventDecoderDigital::CMSPixelEventDecoderDigital(unsigned int rocs, int 
   // Loading constants and flags:
   LOG(logDEBUG2) << "Loading constants...";
   load_constants(flags);
+
+  // Provide identity to the statistics collector:
+  statistics.dectype = "CMSPixelEventDecoderDigital";
 }
 
 std::string CMSPixelEventDecoderDigital::print_data(std::vector< uint16_t> * data) {
@@ -1122,6 +1137,9 @@ CMSPixelEventDecoderAnalog::CMSPixelEventDecoderAnalog(unsigned int rocs, int fl
     
   // Try to read the address levels file
   addressLevels = addLevels;
+
+  // Provide identity to the statistics collector:
+  statistics.dectype = "CMSPixelEventDecoderAnalog";
 }
 
 std::string CMSPixelEventDecoderAnalog::print_data(std::vector< uint16_t > * data) {
