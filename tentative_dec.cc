@@ -9,6 +9,24 @@
 using namespace std;
 using namespace CMSPixel;
 
+void asciiHitmap(std::vector<pixel> * evt) {
+
+    for(size_t col = 0; col < ROCNUMCOLS; col++) {
+    std::cout << "-";
+    for(size_t row = 0; row < ROCNUMROWS; row++) {
+      bool found = false;
+      for(std::vector<pixel>::iterator it = evt->begin(); it != evt->end(); ++it) {
+	if(it->col == col && it->row == row && it->roc == 0) {
+	  found = true;
+	  std::cout << "X";
+	}
+      }
+      if(!found) std::cout << " ";
+    }
+    std::cout << std::endl;
+  }
+}
+
 int main(int argc, char* argv[]) {
 
   Log::ReportingLevel() = Log::FromString(argv[1] ? argv[1] : "SUMMARY");
