@@ -56,6 +56,9 @@ IF(BUILD_TOOLS)
   ADD_EXECUTABLE (unit_tests unit_tests.cc)
   TARGET_LINK_LIBRARIES (unit_tests  ${DEC_LIB})
 
+  ADD_EXECUTABLE (biterrors biterrors.cc)
+  TARGET_LINK_LIBRARIES (biterrors  ${DEC_LIB})
+
   ADD_EXECUTABLE (text_decode text_decode.cc)
   TARGET_LINK_LIBRARIES (text_decode  ${DEC_LIB})
 
