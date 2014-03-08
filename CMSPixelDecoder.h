@@ -316,6 +316,7 @@ namespace CMSPixel {
     int get_event(std::vector<pixel> * decevt, timing & evt_timing);
     int get_event(std::vector<pixel> * decevt, std::vector<std::pair<uint8_t,uint8_t> > * readback, timing & evt_timing);
     virtual std::vector<uint16_t> get_rawdata();
+    virtual std::vector<uint16_t> get_eventdata();
     virtual bool process_rawdata(std::vector< uint16_t > * /*rawdata*/) { return true; };
 
     CMSPixelStatistics statistics;
@@ -329,6 +330,7 @@ namespace CMSPixel {
     FILE * mtbStream;
     timing cms_t;
     std::vector<uint16_t> lastevent_raw;
+    std::vector < uint16_t > data;
 
     virtual bool chop_datastream(std::vector< uint16_t > * rawdata) = 0;
 

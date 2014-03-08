@@ -324,8 +324,8 @@ int CMSPixelFileDecoder::get_event(std::vector<pixel> * decevt, std::vector<std:
 
   // Clear the data from previous decoding:
   lastevent_raw.clear();
+  data.clear();
 
-  std::vector < uint16_t > data;
   LOG(logDEBUG) << "STATUS Start chopping file.";
 
   // Cut off the next event from the filestream:
@@ -345,6 +345,10 @@ int CMSPixelFileDecoder::get_event(std::vector<pixel> * decevt, std::vector<std:
   statistics.update(evt->statistics);
 
   return status;
+}
+
+std::vector<uint16_t> CMSPixelFileDecoder::get_eventdata() {
+  return data;
 }
 
 std::vector<uint16_t> CMSPixelFileDecoder::get_rawdata() {
