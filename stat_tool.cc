@@ -30,10 +30,14 @@ int main(int argc, char* argv[]) {
     else if(!strcmp(argv[i],"-o")) { 
       write_badevents = true;
       file_badevents = string(argv[++i]);
+      std::cout << "Filtering for bad events, will write bad events to file " 
+		<< file_badevents << std::endl;
     }
     else if(!strcmp(argv[i],"-dp")) {
       consider_dataphase = true;
       dataphase = atoi(argv[++i]);
+      std::cout << "Filtering for dataphase " << static_cast<int>(dataphase) 
+		<< ", will print additional filtered statistics." << std::endl;
     }
     // add to the list of files to be processed:
     else { files.push_back(string(argv[i])); }
@@ -59,17 +63,18 @@ int main(int argc, char* argv[]) {
       }
 
       // Update our statistics depending on dataphase settings:
-      if(!consider_dataphase || time.data_phase == dataphase) {
-	myStatistics.update(decoder->evt->statistics);
-      }
+      if(consider_dataphase && time.data_phase == dataphase) { myStatistics.update(decoder->evt->statistics); }
     }
 
     if(write_badevents) { fclose(badevents); }
     delete decoder;
   }
 
-  // Print filtered statistics:
-  std::cout << "Filtered statistics:" << std::endl;
-  myStatistics.print();
+  // Print filtered statistics for one dataphase only:
+  if(consider_dataphase) {
+    std::cout << "Filtered statistics for data phase " 
+	      << static_cast<int>(dataphase) << ":" << std::endl;
+    myStatistics.print();
+  }
   return 0;
 }
