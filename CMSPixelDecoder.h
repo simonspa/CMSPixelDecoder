@@ -83,6 +83,7 @@ namespace CMSPixel {
     char triggers_stacked;
     char trigger_phase;
     char data_phase;
+    char status;
   } timing;
 
   // Struct for Decoder levels

@@ -202,6 +202,7 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
 	((time2>>8)&0xff);
 
       cms_t.trigger_phase = (last>>13)&0xf;
+      cms_t.status = (last>>8)&0xf;
       cms_t.data_phase = (nexttolast>>6)&0xf;
       cms_t.triggers_stacked = (nexttolast)&0xff;
     }
@@ -223,6 +224,7 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
 	((time2)&0xff);
 
       cms_t.trigger_phase = (last>>5)&0xf;
+      cms_t.status = last&0xf;
       cms_t.data_phase = (last>>14)&0xf;
       cms_t.triggers_stacked = (last>>8)&0xff;
     }
@@ -237,6 +239,7 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
     LOG(logDEBUG4) << "IPBus number triggers: " << cms_t.trigger_number << ", tokens: " << cms_t.token_number;
     LOG(logDEBUG4) << "IPBus triggers stacked: " << static_cast<int>(cms_t.triggers_stacked);
     LOG(logDEBUG4) << "IPBus phases trigger: " << static_cast<int>(cms_t.trigger_phase) << ", data: " << static_cast<int>(cms_t.data_phase);
+    LOG(logDEBUG4) << "IPBus event status: " << static_cast<int>(cms_t.status);
 
     // cut first 8 bytes from header:
     rawdata->erase(rawdata->begin(),rawdata->begin()+4);
