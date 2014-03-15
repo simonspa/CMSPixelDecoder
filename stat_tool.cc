@@ -21,18 +21,26 @@ int main(int argc, char* argv[]) {
   std::string file_badevents;
   uint8_t dataphase = 0;
   FILE * badevents;
+  size_t max_events = 999999999;
 
   for (int i = 1; i < argc; i++) {
     // Setting number of expected ROCs:
     if (!strcmp(argv[i],"-n")) { num_rocs = atoi(argv[++i]); }
+    // Maximum events:
+    if (!strcmp(argv[i],"-e")) { 
+      max_events = atoi(argv[++i]);
+      std::cout << "Decoding a maximum number of " << max_events << " events." << std::endl;
+    }
     // Set the verbosity level:
     else if (!strcmp(argv[i],"-v")) { Log::ReportingLevel() = Log::FromString(argv[++i]); }
+    // Set option for bad event output file
     else if(!strcmp(argv[i],"-o")) { 
       write_badevents = true;
       file_badevents = string(argv[++i]);
       std::cout << "Filtering for bad events, will write bad events to file " 
 		<< file_badevents << std::endl;
     }
+    // Option to filter one data phase:
     else if(!strcmp(argv[i],"-dp")) {
       consider_dataphase = true;
       dataphase = atoi(argv[++i]);
@@ -52,10 +60,13 @@ int main(int argc, char* argv[]) {
     CMSPixelFileDecoder * decoder = new CMSPixelFileDecoderRAL((*it).c_str(),num_rocs,0,ROC_PSI46DIGV2);
 
     int status;
+    size_t events = 0;
 
     while(1) {
       status = decoder->get_event(evt, time);
       if(status <= DEC_ERROR_NO_MORE_DATA) { break; }
+      if(events > max_events) { break; }
+
       // We want to extract bad events:
       else if(write_badevents && status < DEC_ERROR_EMPTY_EVENT) {
 	std::vector<uint16_t> raw = decoder->get_rawdata();
@@ -64,6 +75,8 @@ int main(int argc, char* argv[]) {
 
       // Update our statistics depending on dataphase settings:
       if(consider_dataphase && time.data_phase == dataphase) { myStatistics.update(decoder->evt->statistics); }
+
+      events++;
     }
 
     if(write_badevents) { fclose(badevents); }
