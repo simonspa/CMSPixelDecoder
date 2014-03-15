@@ -2,6 +2,7 @@ build
 bin
 lib
 data
+samples
 *.log
 *.root
 unit_tests
