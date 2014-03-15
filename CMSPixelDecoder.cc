@@ -234,6 +234,13 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
     cms_t.data_phase &= 0x03;
     cms_t.triggers_stacked &= 0x3f;
 
+    // Some debug printout:
+    LOG(logDEBUG4) << "IPBus timestamp: " << std::hex << cms_t.timestamp << std::dec << " = " << cms_t.timestamp << "us.";
+    LOG(logDEBUG4) << "IPBus number triggers: " << cms_t.trigger_number << ", tokens: " << cms_t.token_number;
+    LOG(logDEBUG4) << "IPBus triggers stacked: " << static_cast<int>(cms_t.triggers_stacked);
+    LOG(logDEBUG4) << "IPBus phases trigger: " << static_cast<int>(cms_t.trigger_phase) << ", data: " << static_cast<int>(cms_t.data_phase);
+    LOG(logDEBUG4) << "IPBus event status: " << static_cast<int>(cms_t.status);
+
     // Check the event status for timeouts:
     // IPBus event status is the sum of: 1=token sent out, 2=beginning of data detected, 4=token received back, 8=timeout
     if(cms_t.status != 7) {
@@ -241,13 +248,6 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
       statistics.evt_invalid++;
       return false;
     }
-
-    // Some debug printout:
-    LOG(logDEBUG4) << "IPBus timestamp: " << std::hex << cms_t.timestamp << std::dec << " = " << cms_t.timestamp << "us.";
-    LOG(logDEBUG4) << "IPBus number triggers: " << cms_t.trigger_number << ", tokens: " << cms_t.token_number;
-    LOG(logDEBUG4) << "IPBus triggers stacked: " << static_cast<int>(cms_t.triggers_stacked);
-    LOG(logDEBUG4) << "IPBus phases trigger: " << static_cast<int>(cms_t.trigger_phase) << ", data: " << static_cast<int>(cms_t.data_phase);
-    LOG(logDEBUG4) << "IPBus event status: " << static_cast<int>(cms_t.status);
 
     // cut first 8 bytes from header:
     rawdata->erase(rawdata->begin(),rawdata->begin()+4);
