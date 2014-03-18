@@ -202,7 +202,7 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
 	((time2>>8)&0xff);
 
       cms_t.trigger_phase = (last>>13)&0xf;
-      cms_t.status = (last>>8)&0xf;
+      cms_t.status = (last>>8)&0x1f;
       cms_t.data_phase = (nexttolast>>6)&0xf;
       cms_t.triggers_stacked = (nexttolast)&0xff;
     }
@@ -224,7 +224,7 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
 	((time2)&0xff);
 
       cms_t.trigger_phase = (last>>5)&0xf;
-      cms_t.status = last&0xf;
+      cms_t.status = last&0x1f;
       cms_t.data_phase = (last>>14)&0xf;
       cms_t.triggers_stacked = (last>>8)&0xff;
     }
@@ -243,7 +243,7 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
 
     // Check the event status for timeouts:
     // IPBus event status is the sum of: 1=token sent out, 2=beginning of data detected, 4=token received back, 8=timeout
-    if(cms_t.status != 7) {
+    if((cms_t.status&0xf) != 7) {
       LOG(logERROR) << "Invalid event status detected.";
       statistics.evt_invalid++;
       return false;
