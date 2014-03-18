@@ -17,7 +17,7 @@ int main(int argc, char* argv[]) {
   timing time;
   unsigned int num_rocs = 8;
   std::vector<std::string> files;
-  bool write_badevents = false, consider_dataphase = false;
+  bool write_badevents = false, consider_dataphase = false, have_psidtb = false;
   std::string file_badevents;
   uint8_t dataphase = 0;
   FILE * badevents;
@@ -25,7 +25,10 @@ int main(int argc, char* argv[]) {
 
   for (int i = 1; i < argc; i++) {
     // Setting number of expected ROCs:
-    if (!strcmp(argv[i],"-n")) { num_rocs = atoi(argv[++i]); }
+    if (!strcmp(argv[i],"-n")) { 
+       num_rocs = atoi(argv[++i]);
+       std::cout << "Decoding data from " << num_rocs << " ROCs.";
+    } 
     // Maximum events:
     if (!strcmp(argv[i],"-e")) { 
       max_events = atoi(argv[++i]);
@@ -47,6 +50,11 @@ int main(int argc, char* argv[]) {
       std::cout << "Filtering for dataphase " << static_cast<int>(dataphase) 
 		<< ", will print additional filtered statistics." << std::endl;
     }
+    // Option to filter one data phase:
+    else if(!strcmp(argv[i],"-dtb")) {
+      have_psidtb = true;
+      std::cout << "Data from PSI DTB board." << std::endl;
+    }
     // add to the list of files to be processed:
     else { files.push_back(string(argv[i])); }
   }
@@ -57,7 +65,13 @@ int main(int argc, char* argv[]) {
   for (std::vector<std::string>::iterator it = files.begin(); it != files.end(); ++it) {
     
     std::cout << "Trying to decode " << (*it) << std::endl;
-    CMSPixelFileDecoder * decoder = new CMSPixelFileDecoderRAL((*it).c_str(),num_rocs,0,ROC_PSI46DIGV2);
+    CMSPixelFileDecoder * decoder;
+    if(have_psidtb) {
+       decoder = new CMSPixelFileDecoderPSI_DTB((*it).c_str(),num_rocs,0,ROC_PSI46DIGV21,"");
+    }
+    else {
+       decoder = new CMSPixelFileDecoderRAL((*it).c_str(),num_rocs,0,ROC_PSI46DIGV2);
+    }
 
     int status;
     size_t events = 0;
