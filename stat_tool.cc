@@ -20,14 +20,14 @@ int main(int argc, char* argv[]) {
   bool write_badevents = false, consider_dataphase = false, have_psidtb = false;
   std::string file_badevents;
   uint8_t dataphase = 0;
-  FILE * badevents;
+  std::ofstream badevents;
   size_t max_events = 999999999;
 
   for (int i = 1; i < argc; i++) {
     // Setting number of expected ROCs:
     if (!strcmp(argv[i],"-n")) { 
        num_rocs = atoi(argv[++i]);
-       std::cout << "Decoding data from " << num_rocs << " ROCs.";
+       std::cout << "Decoding data from " << num_rocs << " ROCs." << std::endl;
     } 
     // Maximum events:
     if (!strcmp(argv[i],"-e")) { 
@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
   }
 
   CMSPixelStatistics myStatistics(num_rocs);
-  if(write_badevents) { badevents = fopen(file_badevents.c_str(),"w"); }
+  if(write_badevents) { badevents.open(file_badevents.c_str(), std::ios::out | std::ios::binary); }
 
   for (std::vector<std::string>::iterator it = files.begin(); it != files.end(); ++it) {
     
@@ -82,9 +82,9 @@ int main(int argc, char* argv[]) {
       if(events > max_events) { break; }
 
       // We want to extract bad events:
-      else if(write_badevents && status < DEC_ERROR_EMPTY_EVENT) {
+      if(write_badevents && status < DEC_ERROR_EMPTY_EVENT) {
 	std::vector<uint16_t> raw = decoder->get_rawdata();
-	fwrite (&raw[0], sizeof(uint16_t), raw.size(), badevents);
+	badevents.write(reinterpret_cast<const char*>(&raw.at(0)), sizeof(raw.at(0))*raw.size());
       }
 
       // Update our statistics depending on dataphase settings:
@@ -93,9 +93,11 @@ int main(int argc, char* argv[]) {
       events++;
     }
 
-    if(write_badevents) { fclose(badevents); }
     delete decoder;
   }
+
+  // Close the badevents file:
+  if(write_badevents) { badevents.close(); }
 
   // Print filtered statistics for one dataphase only:
   if(consider_dataphase) {

@@ -563,22 +563,17 @@ bool CMSPixelFileDecoderPSI_DTB::chop_datastream(std::vector< uint16_t > * rawda
   
   // Store the first header word:
   rawdata->push_back(word);
-  LOG(logDEBUG4) << "Add first: " << std::hex << word << std::dec << std::endl;      
 
   // read the data until the next MTB header arises:
   // morewords:
   if(!readWord(word)) return false;
   while( !((word&0xF000) > 0x0000) && !feof(mtbStream)){
     rawdata->push_back(word);
-    LOG(logDEBUG4) << "Add " << std::hex << word << std::dec << std::endl;      
     if(!readWord(word)) return false;
   }
 
   // Store the last data word:
-  if((word&0xF000) == 0x4000) {
-     LOG(logDEBUG4) << "Add " << std::hex << word << std::dec << std::endl;      
-     rawdata->push_back(word);
-  }
+  if((word&0xF000) == 0x4000) { rawdata->push_back(word); }
   else {
      // Rewind one word to detect the header correctly later on:
      fseek(mtbStream , -2 , SEEK_CUR);
