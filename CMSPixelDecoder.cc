@@ -878,10 +878,12 @@ bool CMSPixelEventDecoder::checkPixelOrder(int col, int row) {
   LOG(logDEBUG4) << "Last pixel was: col " << lastpixel.col << " row " << lastpixel.row;
   LOG(logDEBUG4) << "New pixel is: col " << col << " row " << row;
 
+  bool valid = true;
+
   // If new Column is below Column of the last pixel, order is violated.
   if(lastpixel.col > col) {
     LOG(logDEBUG4) << "Order is wrong! (newcol > oldcol)";
-    return false;
+    valid = false;
   }
   // If we are still in the same column, check for the row to be higher:
   else if(lastpixel.col == col) {
@@ -889,20 +891,20 @@ bool CMSPixelEventDecoder::checkPixelOrder(int col, int row) {
     if(col%2 != 0) {
       if(lastpixel.row < row) {
 	LOG(logDEBUG4) << "Order is wrong! (odd col: newrow < oldrow)";
-	return false;
+	valid = false;
       }
     }
     // In even columns the next row address is supposed to be higher:
     else if(lastpixel.row > row) {
       LOG(logDEBUG4) << "Order is wrong! (evencol: newrow > oldrow)";
-      return false;
+      valid = false;
     }
   }
   // Everything looks fine. Update the lastpixel with these values:
   LOG(logDEBUG4) << "Order is fine.";
   lastpixel.col = col;
   lastpixel.row = row;
-  return true;
+  return valid;
 }
 
 bool CMSPixelEventDecoder::convertDcolToCol(int dcol, int pix, int & col, int & row)
