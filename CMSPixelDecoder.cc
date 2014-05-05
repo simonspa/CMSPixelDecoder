@@ -207,14 +207,14 @@ bool CMSPixelFileDecoderRAL::process_rawdata(std::vector< uint16_t > * rawdata) 
       cms_t.triggers_stacked = (nexttolast)&0xff;
     }
     else { // odd event length
-      cms_t.trigger_number = (((trignumber2<<32)&0xff000000) |
+      cms_t.trigger_number = (((trignumber2<<16)&0xff000000) |
 			      ((trignumber1<<16)&0xff0000) |
-			      ((trignumber1<<8)&0xff00) |
+			      ((trignumber1)&0xff00) |
 			      ((trignumber0)&0xff));
 
-      cms_t.token_number = (((toknumber2<<32)&0xff000000) |
+      cms_t.token_number = (((toknumber2<<16)&0xff000000) |
 			    ((toknumber1<<16)&0xff0000) |
-			    ((toknumber1<<8)&0xff00) |
+			    ((toknumber1)&0xff00) |
 			    ((toknumber0)&0xff));
 
       cms_t.timestamp = ((time2<<24)&0xff00000000LLU) |
