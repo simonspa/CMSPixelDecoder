@@ -62,7 +62,7 @@ namespace CMSPixel {
     ROC_PSI46XDB      = 0x02,
     ROC_PSI46DIG      = 0x03,
     ROC_PSI46DIG_TRIG = 0x04,
-    ROC_PSI46DIGV2_B  = 0x15,
+    ROC_PSI46DIGV2_B  = 0x05,
     ROC_PSI46DIGV2    = 0x06,
     ROC_PSI46DIGV21   = 0x07
   };
