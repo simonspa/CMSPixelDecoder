@@ -60,11 +60,11 @@ namespace CMSPixel {
   enum {
     ROC_PSI46V2       = 0x01,
     ROC_PSI46XDB      = 0x02,
-    ROC_PSI46DIG      = 0x04,
-    ROC_PSI46DIG_TRIG = 0x08,
-    ROC_PSI46DIGV2_B  = 0x10,
-    ROC_PSI46DIGV2    = 0x20,
-    ROC_PSI46DIGV21   = 0x40
+    ROC_PSI46DIG      = 0x03,
+    ROC_PSI46DIG_TRIG = 0x04,
+    ROC_PSI46DIGV2_B  = 0x15,
+    ROC_PSI46DIGV2    = 0x06,
+    ROC_PSI46DIGV21   = 0x07
   };
 
   // Struct for raw data readout
