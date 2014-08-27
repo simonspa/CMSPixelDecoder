@@ -820,7 +820,7 @@ int CMSPixelEventDecoder::pre_check_sanity(std::vector< uint16_t > * data, unsig
   length = L_GRANULARITY*data->size();
 
   // Ugly hack for single analog/xdb chip readout without TBM or emulator: we have some testboard trailer...
-  if((theROC & ROC_PSI46V2 || theROC & ROC_PSI46XDB) && !(flag & FLAG_HAVETBM) && noOfROC == 1) {
+  if((theROC == ROC_PSI46V2 || theROC == ROC_PSI46XDB) && !(flag & FLAG_HAVETBM) && noOfROC == 1) {
     data->erase(data->end() - 4,data->end());
     LOG(logDEBUG3) << "FIXME(singleAnalogROC): Removed some trailers.";
   }
@@ -1100,7 +1100,7 @@ int CMSPixelEventDecoderDigital::decode_hit(std::vector< uint16_t > data, unsign
   //  drow =  pixel msb           *36 + pixel nmsb *6 + pixel lsb
   // Bug in the PSI46DIG ROC: row has to be inverted (~).
   int drow;
-  if(theROC & ROC_PSI46DIG)
+  if(theROC == ROC_PSI46DIG)
     drow =  (~(pixel_hit>>15)&7)*36 + (~(pixel_hit>>12)&7)*6 + (~(pixel_hit>>9)&7);
   else
     drow =  ((pixel_hit>>15)&7)*36 + ((pixel_hit>>12)&7)*6 + ((pixel_hit>>9)&7);
@@ -1177,7 +1177,7 @@ bool CMSPixelEventDecoderAnalog::find_roc_header(std::vector< uint16_t > data, u
   if(roc >= addressLevels.ROC.size()) return false;
     
   // Some analog single ROCs seem to produce no ROC header at all. Hard setting the position with the flag below:
-  if((theROC & ROC_PSI46V2 || theROC & ROC_PSI46XDB) && !(flag & FLAG_HAVETBM) && (flag & FLAG_OVERWRITE_ROC_HEADER_POS)) {
+  if((theROC == ROC_PSI46V2 || theROC == ROC_PSI46XDB) && !(flag & FLAG_HAVETBM) && (flag & FLAG_OVERWRITE_ROC_HEADER_POS)) {
     if(*pos == 1) {
       LOG(logDEBUG1) << "Assumed corrupt ROC header ("<< std::setw(5) << sign(data[*pos]) << " " << std::setw(5) << sign(data[*pos+1]) << ") after " << std::dec << *pos << " words.";
       *pos += L_ROC_HEADER;
