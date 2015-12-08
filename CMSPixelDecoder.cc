@@ -594,7 +594,7 @@ bool CMSPixelFileDecoder::read_address_levels(const char* levelsFile, unsigned i
   levels *tempLevels = new levels();
   std::ifstream* file = new std::ifstream(levelsFile);
 
-  if ( *file == 0 ){
+  if ( !file->is_open() ){
     LOG(logERROR) << "READ_ADDRESS_LEVELS::ERROR cannot open the address levels file!";
     return false;
   }
